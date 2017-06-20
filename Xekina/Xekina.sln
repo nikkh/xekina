@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSTS-Spike", "..\..\..\..\Documents\GitHub\xekina\VSTS-Spike\VSTS-Spike\VSTS-Spike.csproj", "{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSTS-Spike", "VSTS-Spike\VSTS-Spike\VSTS-Spike.csproj", "{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeploymentHelper", "..\..\..\..\Documents\GitHub\xekina\VSTS-Spike\DeploymentHelper\DeploymentHelper.csproj", "{26E478A4-E971-4614-AC67-4742727E48FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeploymentHelper", "VSTS-Spike\DeploymentHelper\DeploymentHelper.csproj", "{26E478A4-E971-4614-AC67-4742727E48FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

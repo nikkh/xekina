@@ -30,7 +30,10 @@ namespace VSTS_Spike.Models
     {
         public string value { get; set; }
     }
-
+    public class ArtifactRepoUri
+    {
+        public string value { get; set; }
+    }
     public class ArtifactRepoFolder
     {
         public string value { get; set; }
@@ -42,6 +45,12 @@ namespace VSTS_Spike.Models
     }
 
     public class ArtifactRepoDisplayName
+    {
+        public string value { get; set; }
+    }
+  
+
+    public class ArtifactRepoSecurityToken
     {
         public string value { get; set; }
     }
@@ -123,9 +132,11 @@ namespace VSTS_Spike.Models
         public MaxAllowedVmsPerUser maxAllowedVmsPerUser { get; set; }
         public MaxAllowedVmsPerLab maxAllowedVmsPerLab { get; set; }
         public AllowedVmSizes allowedVmSizes { get; set; }
+        public ArtifactRepoUri artifactRepoUri { get; set; }
         public ArtifactRepoFolder artifactRepoFolder { get; set; }
         public ArtifactRepoBranch artifactRepoBranch { get; set; }
         public ArtifactRepoDisplayName artifactRepoDisplayName { get; set; }
+        public ArtifactRepoSecurityToken artifactRepoSecurityToken { get; set; }
         public PilotVMName pilotVMName { get; set; }
         public VMSize VMSize { get; set; }
         public VMStorageType VMStorageType { get; set; }
@@ -142,7 +153,9 @@ namespace VSTS_Spike.Models
         public GoldenImageVMName goldenImageVMName { get; set; }
     }
 
-    public class RootObject
+    
+
+    public class LabTemplateParameters
     {
         public string schema { get; set; }
         public string contentVersion { get; set; }

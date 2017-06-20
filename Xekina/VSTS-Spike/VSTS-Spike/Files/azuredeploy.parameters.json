@@ -17,14 +17,20 @@
     "allowedVmSizes": {
       "value": "\"Standard_DS1_v2\", \"Standard_DS11_v2\""
     },
+    "artifactRepoUri": {
+      "value": "dummy"
+    },
     "artifactRepoFolder": {
-      "value": "AzureConDemo"
+      "value": "dummy"
     },
     "artifactRepoBranch": {
-      "value": "master"
+      "value": "dummy"
     },
     "artifactRepoDisplayName": {
-      "value": "FabrikamPrivateRepo"
+      "value": "dummy"
+    },
+    "artifactRepoSecurityToken": {
+      "value": "dummy"
     },
     "pilotVMName": {
       "value": "TestBox001"
