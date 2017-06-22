@@ -125,7 +125,7 @@ namespace VSTS_Spike.Models
         public string value { get; set; }
     }
 
-    public class Parameters
+    public class LabParameters
     {
         public NewLabName newLabName { get; set; }
         public LabVmShutDownTime labVmShutDownTime { get; set; }
@@ -159,7 +159,7 @@ namespace VSTS_Spike.Models
     {
         public string schema { get; set; }
         public string contentVersion { get; set; }
-        public Parameters parameters { get; set; }
+        public LabParameters parameters { get; set; }
     }
 }
 

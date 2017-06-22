@@ -36,10 +36,10 @@ namespace VSTS_Spike
             VssConnection connection = new VssConnection(new Uri(c_collectionUri), creds);
             v = connection;
 
-            // Dont need this code at the moment.
+            // Used later - move closer to where its needed
             GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
             var repo = gitClient.GetRepositoryAsync(c_projectname, c_reponame).Result;
-            
+
             //// Get process templates
             //ProcessHttpClient processClient = connection.GetClient<ProcessHttpClient>();
             //var processes = processClient.GetProcessesAsync().Result;
@@ -72,21 +72,21 @@ namespace VSTS_Spike
             // return;
 
             bool createVSTSProject = false;
-            string p = null;
+            string projectName = null;
+            Console.WriteLine("***************Project Creation ******************");
+            Console.WriteLine("Enter your project name");
+           
+            do
+            {
+                projectName = Console.ReadLine();
+            } while (String.IsNullOrEmpty(projectName));
+
             if (createVSTSProject)
             {
                 // Create a new project
-                Console.WriteLine("***************Project Creation ******************");
-                Console.WriteLine("Enter your project name");
-                p = null;
-                do
-                {
-                    p = Console.ReadLine();
-                } while (String.IsNullOrEmpty(p));
-
-
+                Console.WriteLine("*************** VSTS Project Creation ******************");
                 projectHttpClient = connection.GetClient<ProjectHttpClient>();
-                string projectName = CreateProject(connection, projectHttpClient, p);
+                CreateProject(connection, projectHttpClient, projectName);
                 var createdProject = projectHttpClient.GetProject(projectName).Result;
 
                 Console.WriteLine("retrieve and delete default iterations from project");
@@ -183,46 +183,93 @@ namespace VSTS_Spike
                 var push = gh.CreatePush(createdProject.Name, repo.Name);
                 pushes = gh.ListPushesIntoMaster(createdProject.Name, repo.Name);
             }
-            // Create a new project
-            Console.WriteLine("***************Create a DevTest Lab ******************");
-            Console.WriteLine("Enter a deployment name (need to work out how to capture template paramters here");
-            Console.WriteLine("or q to quit");
+            string p = null;
+            bool createDevTestLab = false;
+            if (createDevTestLab)
+            {
+                // Create a new project
+                Console.WriteLine("***************Create a DevTest Lab ******************");
+                Console.WriteLine("Lab will be called ", projectName);
+                Console.WriteLine("press q to quit");
+                p = null;
+                do
+                {
+                    p = Console.ReadLine();
+                } while (String.IsNullOrEmpty(p));
+                if (p == "q") return;
+                DeployerParameters parameters = new DeployerParameters();
+
+                parameters.ResourceGroupName = "Xekina-RG1";
+                parameters.DeploymentName = "Xekina-Lab-Deployment";
+                parameters.ResourceGroupLocation = "North Europe"; // must be specified for creating a new resource group
+                parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath");
+                parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
+                // TODO: Get this from app.settings
+                parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+                parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
+                parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
+                parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
+
+                string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
+                LabTemplateParameters labParameters = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
+                labParameters.parameters.newLabName.value = "XekinaLab";
+                labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
+                labParameters.parameters.artifactRepoDisplayName.value = CloudConfigurationManager.GetSetting("ArtifactRepoDisplayName");
+                labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
+                labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+                labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+                labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+                labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+                labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
+                labParameters.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
+                parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
+                Deployer deployer = new Deployer(parameters);
+                deployer.Deploy().SyncResult();
+            }
+            
+            Console.WriteLine("*************** Create Environments ******************");
+            Console.WriteLine("For project "+ projectName);
+            Console.WriteLine("press q to quit or c to continue");
             p = null;
             do
             {
                 p = Console.ReadLine();
             } while (String.IsNullOrEmpty(p));
             if (p == "q") return;
+
+            CreateEnvironment(projectName, "DEV");
+            CreateEnvironment(projectName, "PROD");
+
+            Console.ReadLine();
+            return;
+        }
+
+        private static void CreateEnvironment(string projectName, string environment)
+        {
+            string environmentHostingPlanSku = CloudConfigurationManager.GetSetting(string.Format("HostingPlanSkuName{0}", environment));
             DeployerParameters parameters = new DeployerParameters();
-            
-            parameters.ResourceGroupName = "Xekina-RG1";
-            parameters.DeploymentName = "Xekina-Lab-Deployment";
-            parameters.ResourceGroupLocation = "North Europe"; // must be specified for creating a new resource group
-            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath"); 
-            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
-            // TODO: Get this from app.settings
+            Console.WriteLine("Creating environment" + environment);
+            parameters.ResourceGroupName = String.Format("{0}-{1}", projectName, environment).ToLower();
+            parameters.DeploymentName = String.Format("{0}-{1}-deployment", projectName, environment).ToLower();
+            parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
+            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("EnvTemplateFilePath");
+            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("EnvTemplateParameterFilePath");
+           
             parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
             parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
             parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
             parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
 
             string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
-            LabTemplateParameters ltp = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
-            ltp.parameters.newLabName.value = "XekinaLab";
-            ltp.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
-            ltp.parameters.artifactRepoDisplayName.value = CloudConfigurationManager.GetSetting("ArtifactRepoDisplayName");
-            ltp.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
-            ltp.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-            ltp.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-            ltp.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
-            ltp.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
-            parameters.ParameterFileContent = JsonConvert.SerializeObject(ltp);
+            EnvironmentTemplateParameters envParameters = JsonConvert.DeserializeObject<EnvironmentTemplateParameters>(templateParameters);
+            envParameters.parameters.projectName.value = projectName;
+            envParameters.parameters.environmentName.value = environment;
+            envParameters.parameters.skuName.value = environmentHostingPlanSku;
+            envParameters.parameters.administratorLogin.value = CloudConfigurationManager.GetSetting("EnvSQLAdmin");
+            envParameters.parameters.administratorLoginPassword.value = CloudConfigurationManager.GetSetting("EnvSQLAdminPassword");
+            parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();
-            Console.ReadLine();
-            return;
         }
 
         private static WorkItemClassificationNode AddIteration(Guid projectId, string iterationName, DateTime startDate, DateTime endDate, string path = null)
