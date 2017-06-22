@@ -202,10 +202,10 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Files\azuredeploy.json">
+    <None Include="LabTemplate\azuredeploy.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Files\azuredeploy.parameters.json">
+    <None Include="LabTemplate\azuredeploy.parameters.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Files\parameters.json">

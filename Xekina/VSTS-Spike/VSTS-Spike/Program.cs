@@ -198,8 +198,8 @@ namespace VSTS_Spike
             parameters.ResourceGroupName = "Xekina-RG1";
             parameters.DeploymentName = "Xekina-Lab-Deployment";
             parameters.ResourceGroupLocation = "North Europe"; // must be specified for creating a new resource group
-            parameters.PathToTemplateFile = "./Files/azuredeploy.json";
-            parameters.PathToParameterFile = "./Files/azuredeploy.parameters.json";
+            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath"); 
+            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
             // TODO: Get this from app.settings
             parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
             parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
@@ -213,8 +213,9 @@ namespace VSTS_Spike
             ltp.parameters.artifactRepoDisplayName.value = CloudConfigurationManager.GetSetting("ArtifactRepoDisplayName");
             ltp.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
             ltp.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            ltp.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
-
+            ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            ltp.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+            ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
             parameters.ParameterFileContent = JsonConvert.SerializeObject(ltp);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();

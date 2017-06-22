@@ -38,9 +38,6 @@ namespace DeploymentHelper
             JObject templateFileContents = GetJsonFileContents(Parameters.PathToTemplateFile);
             JObject parameterFileContents = GetJsonStringContents(Parameters.ParameterFileContent);
 
-           
-
-            
 
             // Create the resource manager client
             var resourceManagementClient = new ResourceManagementClient(serviceCreds);
