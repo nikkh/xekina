@@ -35,7 +35,16 @@ namespace VSTS_Spike
             creds.Storage = new VssClientCredentialStorage();
             VssConnection connection = new VssConnection(new Uri(c_collectionUri), creds);
             v = connection;
+            
+            string projectName = null;
+            Console.WriteLine("***************Project Creation ******************");
+            Console.WriteLine("Enter your project name");
 
+            do
+            {
+                projectName = Console.ReadLine();
+            } while (String.IsNullOrEmpty(projectName));
+            
             // Used later - move closer to where its needed
             GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
             var repo = gitClient.GetRepositoryAsync(c_projectname, c_reponame).Result;
@@ -44,44 +53,41 @@ namespace VSTS_Spike
             //ProcessHttpClient processClient = connection.GetClient<ProcessHttpClient>();
             //var processes = processClient.GetProcessesAsync().Result;
 
+            ProjectHttpClient projectHttpClient = null;
 
-
-
-            // Retrieve a list of projects from the account. (and ask if they should be deleted).  This is to tidy up my test data.
-            Console.WriteLine("Preparing a list of projects you may wish to delete!");
-            var projectHttpClient = connection.GetClient<ProjectHttpClient>();
-
-            //then - same as above..iterate over the project references(with a hard-coded pagination of the first 10 entries only)
-            foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
+            string DeleteOldVSTSProjects = CloudConfigurationManager.GetSetting("DeleteOldVSTSProjects");
+            if (DeleteOldVSTSProjects == "YES")
             {
-                var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
-                //var urlForTeamProject = ((ReferenceLink)teamProject.Links.Links["web"]).Href;
-
-                //Console.WriteLine("Team Project '{0}' (Id: {1}) at Web Url: '{2}' & API Url: '{3}'",
-                //teamProject.Name,
-                //teamProject.Id,
-                //urlForTeamProject,
-                //teamProject.Url);
-                if (teamProject.Description == "This is a dummy project")
+                // Retrieve a list of projects from the account. (and ask if they should be deleted).  This is to tidy up my test data.
+                Console.WriteLine("Preparing a list of projects you may wish to delete!");
+                projectHttpClient = connection.GetClient<ProjectHttpClient>();
+                bool none = true;
+                //then - same as above..iterate over the project references(with a hard-coded pagination of the first 10 entries only)
+                foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
                 {
-                    Console.WriteLine("Delete this project {0}? (Y/N) default=No", teamProject.Name);
-                    string s = Console.ReadLine();
-                    if (s == "Y") projectHttpClient.QueueDeleteProject(teamProject.Id);
+                    var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
+                    //var urlForTeamProject = ((ReferenceLink)teamProject.Links.Links["web"]).Href;
+                    
+                    //Console.WriteLine("Team Project '{0}' (Id: {1}) at Web Url: '{2}' & API Url: '{3}'",
+                    //teamProject.Name,
+                    //teamProject.Id,
+                    //urlForTeamProject,
+                    //teamProject.Url);
+                    if (teamProject.Description == "This is a dummy project")
+                    {
+                        none = false;
+                        Console.WriteLine("Delete this project {0}? (Y/N) default=No", teamProject.Name);
+                        string s = Console.ReadLine();
+                        if (s == "Y") projectHttpClient.QueueDeleteProject(teamProject.Id);
+                    }
                 }
+                if (none) Console.WriteLine("I didnt find any");
+                
+
             }
-            // return;
 
-            bool createVSTSProject = false;
-            string projectName = null;
-            Console.WriteLine("***************Project Creation ******************");
-            Console.WriteLine("Enter your project name");
-           
-            do
-            {
-                projectName = Console.ReadLine();
-            } while (String.IsNullOrEmpty(projectName));
-
-            if (createVSTSProject)
+            string CreateVSTSProject = CloudConfigurationManager.GetSetting("CreateVSTSProject");
+            if (CreateVSTSProject == "YES")
             {
                 // Create a new project
                 Console.WriteLine("*************** VSTS Project Creation ******************");
@@ -183,9 +189,10 @@ namespace VSTS_Spike
                 var push = gh.CreatePush(createdProject.Name, repo.Name);
                 pushes = gh.ListPushesIntoMaster(createdProject.Name, repo.Name);
             }
+
             string p = null;
-            bool createDevTestLab = false;
-            if (createDevTestLab)
+            string CreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
+            if (CreateDevTestLab == "YES")
             {
                 // Create a new project
                 Console.WriteLine("***************Create a DevTest Lab ******************");
@@ -226,20 +233,24 @@ namespace VSTS_Spike
                 Deployer deployer = new Deployer(parameters);
                 deployer.Deploy().SyncResult();
             }
-            
-            Console.WriteLine("*************** Create Environments ******************");
-            Console.WriteLine("For project "+ projectName);
-            Console.WriteLine("press q to quit or c to continue");
-            p = null;
-            do
+
+            string CreateEnvironments = CloudConfigurationManager.GetSetting("CreateEnvironments");
+            if (CreateEnvironments == "YES")
             {
-                p = Console.ReadLine();
-            } while (String.IsNullOrEmpty(p));
-            if (p == "q") return;
+                Console.WriteLine("*************** Create Environments ******************");
+                Console.WriteLine("For project " + projectName);
+                Console.WriteLine("press q to quit or c to continue");
+                p = null;
+                do
+                {
+                    p = Console.ReadLine();
+                } while (String.IsNullOrEmpty(p));
+                if (p == "q") return;
 
-            CreateEnvironment(projectName, "DEV");
-            CreateEnvironment(projectName, "PROD");
-
+                CreateEnvironment(projectName, "DEV");
+                CreateEnvironment(projectName, "PROD");
+            }
+            Console.WriteLine("Completed sucessfully.");
             Console.ReadLine();
             return;
         }
