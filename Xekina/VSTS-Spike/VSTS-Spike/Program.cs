@@ -216,6 +216,8 @@ namespace VSTS_Spike
             ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
             ltp.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
             ltp.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            ltp.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
+            ltp.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
             parameters.ParameterFileContent = JsonConvert.SerializeObject(ltp);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();

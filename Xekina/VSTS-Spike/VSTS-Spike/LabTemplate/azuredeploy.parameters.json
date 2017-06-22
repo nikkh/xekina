@@ -42,10 +42,10 @@
       "value": "Premium"
     },
     "username": {
-      "value": "demolab"
+      "value": "Pulled from settings file"
     },
     "password": {
-      "value": "<3DevTestLabs!"
+      "value": "Pulled from KeyVault"
     },
     "devBoxTemplateName": {
       "value": "Fabrikam Dev Box"
