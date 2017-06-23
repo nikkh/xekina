@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "newLabName": {
-      "value": "FabrikamDemoLab"
+      "value": "dummy"
     },
     "labVmShutDownTime": {
       "value": "20:00"
@@ -18,61 +18,61 @@
       "value": "\"Standard_DS1_v2\", \"Standard_DS11_v2\""
     },
     "artifactRepoUri": {
-      "value": "dummy"
+      "value": "Pulled from settings file"
     },
     "artifactRepoFolder": {
-      "value": "dummy"
+      "value": "Pulled from settings file"
     },
     "artifactRepoBranch": {
-      "value": "dummy"
+      "value": "Pulled from settings file"
     },
     "artifactRepoDisplayName": {
-      "value": "dummy"
+      "value": "Pulled from settings file"
     },
     "artifactRepoSecurityToken": {
-      "value": "dummy"
+      "value": "Pulled from settings file"
     },
     "pilotVMName": {
-      "value": "TestBox001"
+      "value": "pilotVM"
     },
     "VMSize": {
       "value": "Standard_DS1_v2"
     },
     "VMStorageType": {
-      "value": "Premium"
+      "value": "Standard"
     },
     "username": {
       "value": "Pulled from settings file"
     },
     "password": {
-      "value": "Pulled from KeyVault"
+      "value": "Pulled from settings file"
     },
     "devBoxTemplateName": {
-      "value": "Fabrikam Dev Box"
+      "value": "Template-DevBox"
     },
     "devBoxTemplateDescription": {
-      "value": "Fabrikam Dev box environment"
+      "value": "devBoxTemplateDescription"
     },
     "testBoxTemplateName": {
-      "value": "Fabrikam Test Box"
+      "value": "Template-TestBox"
     },
     "testBoxTemplateDescription": {
-      "value": "Fabrikam Test box environment"
+      "value": "testBoxTemplateDescription"
     },
     "goldenImageTemplateName": {
-      "value": "Fabrikam Latest Testing Build 0219"
+      "value": "Template-Golden"
     },
     "goldenImageTemplateDescription": {
-      "value": "Latest testing build 100219 from VSO"
+      "value": "goldenImageTemplateDescription"
     },
     "devBoxVMName": {
-      "value": "DevBox001"
+      "value": "devBox"
     },
     "testBoxVMName": {
-      "value": "TestBox002"
+      "value": "testBox"
     },
     "goldenImageVMName": {
-      "value": "TestLatest0219"
+      "value": "golden"
     }
   }
 }

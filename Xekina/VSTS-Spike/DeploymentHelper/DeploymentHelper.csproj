@@ -95,8 +95,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AzureNameValidator.cs" />
     <Compile Include="Deployer.cs" />
     <Compile Include="DeployerParameters.cs" />
+    <Compile Include="InvalidAzureNameException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
