@@ -50,6 +50,16 @@ namespace DeploymentHelper
             DeployTemplate(resourceManagementClient, Parameters.ResourceGroupName, Parameters.DeploymentName, templateFileContents, parameterFileContents);
         }
 
+        public async void DeleteResourceGroup(string resourceGroupName)
+        {
+            // Create the resource manager client
+            var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(Parameters.TenantId, Parameters.ClientId, Parameters.ClientSecret);
+            var resourceManagementClient = new ResourceManagementClient(serviceCreds);
+            resourceManagementClient.SubscriptionId = Parameters.SubscriptionId;
+            
+            var ResourceGroup = resourceManagementClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
+        }
+
         private JObject GetJsonStringContents(string jsonString)
         {
             JObject json = new JObject();

@@ -91,6 +91,7 @@ namespace VSTS_Spike
                         {
                             Log(string.Format("Project {0} will be deleted!", teamProject.Name), ConsoleColor.Red);
                             projectHttpClient.QueueDeleteProject(teamProject.Id);
+                            DeleteProjectResourceGroups(teamProject.Name);
                         } 
                     }
                 }
@@ -124,6 +125,24 @@ namespace VSTS_Spike
             Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
             Log("***************************", ConsoleColor.Yellow);
             return;
+        }
+
+        private static void DeleteProjectResourceGroups(string resourceGroupName)
+        {
+            DeployerParameters parameters = new DeployerParameters();
+            parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
+                        
+            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+            parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
+            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
+            Deployer deployer = new Deployer(parameters);
+            Log(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", resourceGroupName, "lab", parameters.SubscriptionId), ConsoleColor.Magenta);
+            deployer.DeleteResourceGroup(String.Format("{0}-{1}", resourceGroupName, "lab"));
+            Log("This will fail because the lab resource groups have locks - need to release them!");
+            Log(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", resourceGroupName, "dev", parameters.SubscriptionId), ConsoleColor.Magenta);
+            deployer.DeleteResourceGroup(String.Format("{0}-{1}", resourceGroupName, "dev"));
+            Log(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", resourceGroupName, "prod", parameters.SubscriptionId), ConsoleColor.Magenta);
+            deployer.DeleteResourceGroup(String.Format("{0}-{1}", resourceGroupName, "prod"));
         }
 
         private static void CreateVSTSProject(string projectName)
@@ -241,9 +260,9 @@ namespace VSTS_Spike
             DeployerParameters parameters = new DeployerParameters();
             parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
             Log("SubscriptionId = " + parameters.SubscriptionId);
-            parameters.ResourceGroupName = string.Format("{0}-{1}-{2}", projectName, "lab", "-rg");
+            parameters.ResourceGroupName = string.Format("{0}-{1}", projectName, "lab");
             Log("Lab resource group is " + parameters.ResourceGroupName, ConsoleColor.Magenta);
-            parameters.DeploymentName = string.Format("{0}-{1}-{2}", projectName, "lab", "-deployment");
+            parameters.DeploymentName = string.Format("{0}-{1}-{2}", projectName, "lab", "deployment");
             Log("Deployment will be called " + parameters.DeploymentName);
             parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
             Log("Lab will be created in " + parameters.ResourceGroupLocation);
@@ -256,9 +275,9 @@ namespace VSTS_Spike
 
             string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
             LabTemplateParameters labParameters = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
-            labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "-lab");
+            labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "lab");
             labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
-            labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "-repo");
+            labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "repo");
             labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
             labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
             labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
