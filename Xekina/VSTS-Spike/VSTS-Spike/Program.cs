@@ -10,6 +10,8 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.TeamFoundation.Build.WebApi;
+
 using Microsoft.VisualStudio.Services.Operations;
 using System.Threading;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -106,6 +108,7 @@ namespace VSTS_Spike
                 CreateVSTSProject(projectName);
             }
 
+            BuildSpike();
             
             string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
             if (ShouldCreateDevTestLab == "YES")
@@ -125,6 +128,13 @@ namespace VSTS_Spike
             Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
             Log("***************************", ConsoleColor.Yellow);
             return;
+        }
+
+        private static void BuildSpike()
+        {
+            Log("Entering the build spike");
+            var buildHttpClient = GetVssConnection().GetClient<BuildHttpClient>();
+            //buildHttpClient.CreateDefinitionAsync(new BuildDefinition { })
         }
 
         private static void DeleteProjectResourceGroups(string resourceGroupName)
