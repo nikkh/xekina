@@ -23,6 +23,9 @@ using System.IO;
 using Newtonsoft.Json;
 using VSTS_Spike.Models;
 using System.Diagnostics;
+using Xekina.Vsts;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace VSTS_Spike
 {
@@ -73,7 +76,7 @@ namespace VSTS_Spike
         //    n.Project = b.Project;
         //    n.QueueStatus = b.QueueStatus;
         //    n.Repository = b.Repository;
-           
+
         //    n.Name = "AAuto-Generated " + DateTime.Now.Ticks.ToString();
         //    foreach (var item in b.Triggers)
         //    {
@@ -98,19 +101,99 @@ namespace VSTS_Spike
         //    return n;
         //}
 
+        public static async void ReleaseSpike()
+        {
+            try
+            {
+                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+                string responseBody = null;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                        Convert.ToBase64String(
+                            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    using (HttpResponseMessage response = client.GetAsync(
+                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?$expand=artifacts,environments&api-version=3.0-preview.1").Result)
+                    {
+                        response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+
+
+                    //}
+                    //using (HttpClient client = new HttpClient())
+                    //{
+                    //    client.DefaultRequestHeaders.Accept.Add(
+                    //        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                    //    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                    //        Convert.ToBase64String(
+                    //            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                    //                string.Format("{0}:{1}", "", personalaccesstoken))));
+                    //    //GET https://{account}.vsrm.visualstudio.com/defaultcollection/{project}/_apis/release/definitions/{definitionid}?api-version={version}
+                    //    using (HttpResponseMessage response = client.GetAsync(
+                    //                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions/2?api-version=3.0-preview.1").Result)
+                    //    {
+                    //        response.EnsureSuccessStatusCode();
+                    //        responseBody = await response.Content.ReadAsStringAsync();
+                    //        Console.WriteLine(responseBody);
+                    //    }
+
+
+                }
+
+                JObject releaseDefinitionCreateSnippet = GetJsonFileContents("./JsonSnippets/releasedefinition-create.json");
+                string releaseName = string.Format("Generated Release process #{0}", DateTime.Now.Ticks);
+                releaseDefinitionCreateSnippet["name"] = releaseName;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                       Convert.ToBase64String(
+                           System.Text.ASCIIEncoding.ASCII.GetBytes(
+                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    var requestUri = new Uri("https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
+                    var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+                    // Setup header(s)
+                    request.Headers.Add("Accept", "application/json");
+
+                    // Add body content
+                    request.Content = new StringContent(
+                        releaseDefinitionCreateSnippet.ToString(),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    // Send the request
+                    using (HttpResponseMessage response = client.SendAsync(request).Result)
+                    {
+                        //response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
         static void Main(string[] args)
         {
-
-            BuildSpike();
+            ReleaseSpike();
+            //BuildSpike();
             return;
 
         
             Log("***************************", ConsoleColor.Yellow);
             Log("** XEKINA is Starting Up **", ConsoleColor.Yellow);
             Log("***************************", ConsoleColor.Yellow);
-           
-            
-            
             string projectName = null;
             
             Log("Enter your project name");
@@ -317,6 +400,19 @@ namespace VSTS_Spike
             var push = gh.CreatePush(createdProject.Name, repo.Name);
             var pushes = gh.ListPushesIntoMaster(createdProject.Name, repo.Name);
             Log("End of VSTS Project Creation Phase.", ConsoleColor.Cyan);
+        }
+
+        private static JObject GetJsonFileContents(string pathToJson)
+        {
+            JObject templatefileContent = new JObject();
+            using (StreamReader file = File.OpenText(pathToJson))
+            {
+                using (JsonTextReader reader = new JsonTextReader(file))
+                {
+                    templatefileContent = (JObject)JToken.ReadFrom(reader);
+                    return templatefileContent;
+                }
+            }
         }
 
         private static void CreateDevTestLab(string projectName)
