@@ -212,17 +212,15 @@
     <None Include="EnvironmentTemplate\azuredeploy.parameters.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="JsonSnippets\builddefinition-create.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="JsonSnippets\full-builddefinition-create.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Include="JsonSnippets\exportedrelease.json" />
+    <None Include="JsonSnippets\Release-Environment-eliot.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="JsonSnippets\releasedefinition-create.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="JsonSnippets\returnedreleaseprocess1.json" />
-    <None Include="JsonSnippets\returnedreleaseprocess2.json" />
+    <None Include="JsonSnippets\releasetemplate.json" />
+    <None Include="JsonSnippets\xekina.json" />
     <None Include="LabTemplate\azuredeploy.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

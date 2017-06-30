@@ -1,5 +1,5 @@
 ﻿{
-  "source": "userInterface",
+  "source": 2,
   "id": 1,
   "revision": 4,
   "name": "Xekina Release Process",
@@ -11,7 +11,7 @@
     "url": "https://app.vssps.visualstudio.com/A63441a8c-d829-41f9-a951-31f1617eb5c1/_apis/Identities/6566631f-83fa-460f-a3b0-5de815bba2d9",
     "imageUrl": "https://nicks-ms-subscription.visualstudio.com/_api/_common/identityImage?id=6566631f-83fa-460f-a3b0-5de815bba2d9"
   },
-  "createdOn": "2017-06-23T14:43:34.07Z",
+  "createdOn": "2017-06-23T14:43:34.070Z",
   "modifiedBy": {
     "id": "6566631f-83fa-460f-a3b0-5de815bba2d9",
     "displayName": "Nick Hill",
@@ -59,50 +59,7 @@
         ]
       },
       "deployStep": {
-        "tasks": [
-          {
-            "taskId": "497d490f-eea7-4f2b-ab94-48d9c1acdcb1",
-            "version": "3.*",
-            "name": "Deploy Azure App Service",
-            "enabled": true,
-            "alwaysRun": false,
-            "continueOnError": false,
-            "timeoutInMinutes": 0,
-            "definitionType": null,
-            "inputs": {
-              "ConnectedServiceName": "53db3d2f-cc2a-4b75-a323-8d13e9075668",
-              "WebAppName": "eliot-dev-web",
-              "ServerfarmId": "/subscriptions/796b222b-b926-4bd5-a6c6-b7f6041433d7/resourceGroups/eliot-dev/providers/Microsoft.Web/serverfarms/eliot-plan",
-              "WebAppKind": "app",
-              "DockerNamespace": "",
-              "DockerRepository": "",
-              "DockerImageTag": "$(Build.BuildId)",
-              "StartupCommand": "",
-              "DeployToSlotFlag": "false",
-              "ResourceGroupName": "",
-              "SlotName": "",
-              "VirtualApplication": "",
-              "Package": "$(System.DefaultWorkingDirectory)\\**\\*.zip",
-              "WebAppUri": "",
-              "ScriptType": "",
-              "InlineScript": "",
-              "ScriptPath": "",
-              "TakeAppOfflineFlag": "false",
-              "UseWebDeploy": "true",
-              "SetParametersFile": "",
-              "RemoveAdditionalFilesFlag": "false",
-              "ExcludeFilesFromAppDataFlag": "false",
-              "AdditionalArguments": "",
-              "RenameFilesFlag": "false",
-              "GenerateWebConfig": "false",
-              "WebConfigParameters": "",
-              "XmlTransformation": "false",
-              "XmlVariableSubstitution": "false",
-              "JSONFiles": "",
-              "AppSettings": ""
-            }
-          }
-        ],
+        "tasks": [],
         "id": 2
       },
       "postDeployApprovals": {
@@ -127,7 +84,7 @@
             "jobCancelTimeoutInMinutes": 1
           },
           "rank": 1,
-          "phaseType": "agentBasedDeployment",
+          "phaseType": 1,
           "name": "Run on agent",
           "workflowTasks": [
             {
@@ -175,7 +132,6 @@
           ]
         }
       ],
-      "queueId": 34,
       "environmentOptions": {
         "emailNotificationType": "OnlyOnFailure",
         "emailRecipients": "release.environment.owner;release.creator",
@@ -188,7 +144,7 @@
       "conditions": [
         {
           "name": "ReleaseStarted",
-          "conditionType": "event",
+          "conditionType": 1,
           "value": ""
         }
       ],
@@ -235,11 +191,10 @@
     {
       "artifactAlias": "Xekina-ASP.NET (PREVIEW)-CI",
       "triggerConditions": [],
-      "triggerType": "artifactSource"
+      "triggerType": 1
     }
   ],
   "releaseNameFormat": "Release-$(rev:r)",
-  "retentionPolicy": { "daysToKeep": 30 },
   "url": "https://nicks-ms-subscription.vsrm.visualstudio.com/639c543d-848c-4fab-95dc-4a422d5cdd29/_apis/Release/definitions/1",
   "_links": {
     "self": { "href": "https://nicks-ms-subscription.vsrm.visualstudio.com/639c543d-848c-4fab-95dc-4a422d5cdd29/_apis/Release/definitions/1" },
