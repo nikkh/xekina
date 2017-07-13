@@ -220,6 +220,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="JsonSnippets\releasetemplate.json" />
+    <None Include="JsonSnippets\serviceendpoint.json" />
     <None Include="JsonSnippets\xekina.json" />
     <None Include="LabTemplate\azuredeploy.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
