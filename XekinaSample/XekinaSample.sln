@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp", "..\Xekina\XekinaWebApp\XekinaWebApp.csproj", "{AB5A2740-78DB-4B74-8443-40D312B4B820}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp.Tests", "..\Xekina\XekinaWebApp.Tests\XekinaWebApp.Tests.csproj", "{ED555C4A-598D-4DC3-96A1-918B2A567DE6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB5A2740-78DB-4B74-8443-40D312B4B820}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB5A2740-78DB-4B74-8443-40D312B4B820}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB5A2740-78DB-4B74-8443-40D312B4B820}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB5A2740-78DB-4B74-8443-40D312B4B820}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED555C4A-598D-4DC3-96A1-918B2A567DE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED555C4A-598D-4DC3-96A1-918B2A567DE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED555C4A-598D-4DC3-96A1-918B2A567DE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED555C4A-598D-4DC3-96A1-918B2A567DE6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
