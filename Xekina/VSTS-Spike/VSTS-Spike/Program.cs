@@ -108,7 +108,7 @@ namespace VSTS_Spike
             serviceEndpointJson["name"] = projectName + "-azure";
             serviceEndpointJson["data"]["subscriptionId"] = CloudConfigurationManager.GetSetting("SubscriptionId");
             serviceEndpointJson["authorization"]["parameters"]["tenantid"] = CloudConfigurationManager.GetSetting("TenantId");
-           
+           // 
             string body = serviceEndpointJson.ToString();
             return CallRestApi(HttpMethod.Post, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1", false, body);
         }
