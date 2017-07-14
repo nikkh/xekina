@@ -132,9 +132,22 @@ namespace VSTS_Spike
 
 
             string temp = releaseDefinition.ToString();
+            // Need to add an automated trigger
+            /* 
+             {
+	"triggers": [{
+		"artifactAlias": "Build Process (dinzin) #2017714.17636",
+		"triggerConditions": [{
+			"sourceBranch": "master",
+			"tags": []
+		}],
+		"triggerType": "artifactSource"
+	}]
+}
+             
+             */
 
-
-             result = CreateReleaseProcess(projectName, releaseDefinition, vstsPersonalAccessToken);
+            result = CreateReleaseProcess(projectName, releaseDefinition, vstsPersonalAccessToken);
              resultString = result.ToString();
             // temporarily log the output to help with the release process request...
              path = String.Format(@"./Workfiles/ReleaseProcessDefinition-{0}.json", projectName);
@@ -451,7 +464,7 @@ namespace VSTS_Spike
                                 string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
 
                     using (HttpResponseMessage response = client.GetAsync(
-                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/dinzin/_apis/release/definitions?$expand=artifacts,environments&api-version=3.0-preview.1").Result)
+                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/dinzin/_apis/release/definitions?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
                     {
                         response.EnsureSuccessStatusCode();
                         responseBody = await response.Content.ReadAsStringAsync();
