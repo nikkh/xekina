@@ -1,0 +1,33 @@
+﻿{"artifacts": [{
+		
+		"type": "Build",
+		"alias": "Build Process (fagly) #2017714.161517",
+		"definitionReference": {
+			
+			"defaultVersionBranch": {
+				"id": "",
+				"name": ""
+			},
+			"defaultVersionSpecific": {
+				"id": "",
+				"name": ""
+			},
+			"defaultVersionTags": {
+				"id": "",
+				"name": ""
+			},
+			"defaultVersionType": {
+				"id": "latestType",
+				"name": "Latest"
+			},
+			"definition": {
+				"id": "86",
+				"name": "Build Process (fagly) #2017714.161517"
+			},
+      "project": {
+        "id": "b8d92cee-4555-48eb-8307-8282ccff2480",
+        "name": "fagly"
+      }
+		},
+		"isPrimary": true
+	}]}
