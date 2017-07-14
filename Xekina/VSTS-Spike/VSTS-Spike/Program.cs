@@ -89,6 +89,14 @@ namespace VSTS_Spike
             
 
             JObject endpoint = CreateServiceEndpoint(projectName);
+            Log("Waiting 20 seconds for service endpoint creation to complete", ConsoleColor.Yellow);
+            for (int i = 0; i < 20; i++)
+            {
+                Console.Write(".");
+                Thread.Sleep(1000);
+            }
+            Console.WriteLine();
+            // This is a constant within the VSTS Account
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
             JObject releaseDefinition = GetReleaseDefinitionTemplate(c_collectionUri, projectName, vstsPersonalAccessToken, releaseTemplateId);
             releaseDefinition["name"] = GetReleaseNameJson(projectName);
@@ -599,6 +607,10 @@ namespace VSTS_Spike
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaWebApp") && (!String.IsNullOrEmpty(e.Name))))
                             {
                                 Console.WriteLine("{0} was discovered in the archive", entry.FullName);
+                                if (entry.Name.Contains(".sln"))
+                                {
+                                    Log("Solution " + entry.Name + "was identified");
+                                }
                                string outputPath = GetOutputPath(entry.FullName);
                                 string content = null;
                                 using (StreamReader reader = new StreamReader(entry.Open()))
@@ -625,7 +637,8 @@ namespace VSTS_Spike
                                 gChanges.Add(change);
 
                             }
-                            foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("Xekina.sln")))
+                          
+                            foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample.sln")))
                             {
                                 Console.WriteLine("{0} was discovered in the archive", entry.FullName);
                                 string outputPath = GetOutputPath(entry.FullName);
@@ -665,11 +678,29 @@ namespace VSTS_Spike
             }
 
 
-            
+
+            // Insert a readme.md
+            GitChange readme = new GitChange()
+            {
+                ChangeType = VersionControlChangeType.Add,
+                Item = new GitItem() { Path = $"readme.md" },
+                NewContent = new ItemContent()
+
+                {
+
+                    Content = "# Introduction",
+
+                    ContentType = ItemContentType.RawText,
+
+                },
 
 
-           
-            
+            };
+
+            gChanges.Add(readme);
+
+
+
             GitCommitRef newCommit = new GitCommitRef()
             {
                 Comment = "Initial commit created by xekina",
@@ -686,8 +717,9 @@ namespace VSTS_Spike
 
         private static string GetOutputPath(string fullName)
         {
-            // nikkh-xekina-07e0ec5/Xekina/XekinaWebApp/App_Start/BundleConfig.cs
-            // nikkh-xekina-07e0ec5/Xekina/Xekina.sln
+            // This whole things is a bit rubbish...
+            // Really need to parameterise the name and location (possibly branch?) of the sample project and 
+            // then read the contents from the .csproj file?
             string outputPath = null;
 
             if (fullName.Contains("XekinaSample.sln"))
@@ -696,35 +728,19 @@ namespace VSTS_Spike
             }
             else
             {
-                if (fullName.Contains("Xekina.sln"))
-                {
-                    outputPath = "Xekina.sln";
-                }
-                else
-                {
-                    var startIndex = fullName.IndexOf("XekinaWebApp");
+               
+               
+                    var startIndex = fullName.IndexOf("Xekina/XekinaWebApp");
                     int length = fullName.Length - startIndex + 1;
                     outputPath = fullName.Substring(startIndex);
-                }
+               
             }
             return outputPath;
         }
 
    
 
-        private static void MessAroundWithGitStuff(string projectName)
-        {
-            VssConnection connection = GetVssConnection();
-
-
-            GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
-            var repo = gitClient.GetRepositoryAsync(c_projectname, c_reponame).Result;
-            gitClient = connection.GetClient<GitHttpClient>();
-            repo = gitClient.GetRepositoryAsync(projectName, projectName).Result;
-            GitHelper gh = new GitHelper(connection);
-            var push = gh.CreatePush(projectName, repo.Name);
-            var pushes = gh.ListPushesIntoMaster(projectName, repo.Name);
-        }
+       
 
         private static void DeleteProjectResourceGroups(string resourceGroupName)
         {
