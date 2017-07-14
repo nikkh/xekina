@@ -689,15 +689,22 @@ namespace VSTS_Spike
             // nikkh-xekina-07e0ec5/Xekina/XekinaWebApp/App_Start/BundleConfig.cs
             // nikkh-xekina-07e0ec5/Xekina/Xekina.sln
             string outputPath = null;
-            if (fullName.Contains(".sln"))
+            if (fullName.Contains("XekinaSample.sln"))
             {
-                outputPath = "Xekina.sln";
+                outputPath = "XekinaSample.sln";
             }
             else
             {
-                var startIndex = fullName.IndexOf("XekinaWebApp");
-                int length = fullName.Length - startIndex + 1;
-                outputPath = fullName.Substring(startIndex);
+                if (fullName.Contains("Xekina.sln"))
+                {
+                    outputPath = "Xekina.sln";
+                }
+                else
+                {
+                    var startIndex = fullName.IndexOf("XekinaWebApp");
+                    int length = fullName.Length - startIndex + 1;
+                    outputPath = fullName.Substring(startIndex);
+                }
             }
             return outputPath;
         }
