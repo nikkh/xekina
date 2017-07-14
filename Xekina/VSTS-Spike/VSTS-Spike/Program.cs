@@ -689,6 +689,7 @@ namespace VSTS_Spike
             // nikkh-xekina-07e0ec5/Xekina/XekinaWebApp/App_Start/BundleConfig.cs
             // nikkh-xekina-07e0ec5/Xekina/Xekina.sln
             string outputPath = null;
+
             if (fullName.Contains("XekinaSample.sln"))
             {
                 outputPath = "XekinaSample.sln";
@@ -709,9 +710,12 @@ namespace VSTS_Spike
             return outputPath;
         }
 
+   
+
         private static void MessAroundWithGitStuff(string projectName)
         {
             VssConnection connection = GetVssConnection();
+
 
             GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
             var repo = gitClient.GetRepositoryAsync(c_projectname, c_reponame).Result;
