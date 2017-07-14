@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp", "..\Xekina\XekinaWebApp\XekinaWebApp.csproj", "{AB5A2740-78DB-4B74-8443-40D312B4B820}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp", "XekinaWebApp\XekinaWebApp.csproj", "{AB5A2740-78DB-4B74-8443-40D312B4B820}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp.Tests", "..\Xekina\XekinaWebApp.Tests\XekinaWebApp.Tests.csproj", "{ED555C4A-598D-4DC3-96A1-918B2A567DE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaWebApp.Tests", "XekinaWebApp.Tests\XekinaWebApp.Tests.csproj", "{ED555C4A-598D-4DC3-96A1-918B2A567DE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
