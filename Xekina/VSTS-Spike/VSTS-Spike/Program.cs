@@ -128,25 +128,36 @@ namespace VSTS_Spike
             releaseDefinition["artifacts"][0]["definitionReference"]["definition"]["name"] = result["name"];
             releaseDefinition["artifacts"][0]["definitionReference"]["project"]["id"] = result["project"]["id"];
             releaseDefinition["artifacts"][0]["definitionReference"]["project"]["name"] = result["project"]["name"];
+
+            JToken releaseTriggerJson = GetReleaseTriggerJson();
+            string test1 = releaseTriggerJson.ToString();
+            releaseTriggerJson["artifactAlias"] = result["name"];
+            releaseTriggerJson["triggerConditions"][0]["sourceBranch"] = "master";
+            releaseDefinition.Remove("triggers");
+            JArray tempest = new JArray();
+            tempest.Add(releaseTriggerJson);
+            releaseDefinition.Add(new JProperty("triggers", tempest));
+
+            releaseDefinition["triggers"][0] = releaseTriggerJson;
             
 
-
-            string temp = releaseDefinition.ToString();
-            // Need to add an automated trigger
-            /* 
-             {
-	"triggers": [{
-		"artifactAlias": "Build Process (dinzin) #2017714.17636",
-		"triggerConditions": [{
-			"sourceBranch": "master",
-			"tags": []
-		}],
-		"triggerType": "artifactSource"
-	}]
-}
+            /*
+             "conditions":[
+                {
+                  "name":"ReleaseStarted",
+                  "conditionType":"event",
+                  "value":""
+                }]
              
              */
 
+            JObject condition = new  JObject();
+            condition.Add(new JProperty("name", "ReleaseStarted"));
+            condition.Add(new JProperty("conditionType", "event"));
+            condition.Add(new JProperty("value", ""));
+            JArray conditions = new JArray(condition);
+            releaseDefinition["environments"][0]["conditions"]=conditions;
+            string temp = releaseDefinition.ToString();
             result = CreateReleaseProcess(projectName, releaseDefinition, vstsPersonalAccessToken);
              resultString = result.ToString();
             // temporarily log the output to help with the release process request...
@@ -161,6 +172,8 @@ namespace VSTS_Spike
             Log(String.Format("Release Process for project {0} created.", projectName));
             return;
         }
+
+       
 
         private static void WriteRestResponseToFile(string rest, string fileName)
         {
@@ -374,7 +387,50 @@ namespace VSTS_Spike
                     new JProperty("tenantid", "<insert tenantid here"))))));
             return j;
         }
+        private static JObject GetReleaseTriggerJson()
+        {
+            JObject j = new JObject();
+            j.Add(new JProperty("artifactAlias", "<Replace with build process name>"));
+            j.Add(new JProperty("triggerType", "artifactSource"));
 
+            JProperty sourceBranch = new JProperty("sourceBranch", "<Replace with source branch>");
+            JProperty tags = new JProperty("tags", new JArray());
+            JObject triggerConditionObject = new JObject();
+            triggerConditionObject.Add(sourceBranch);
+            triggerConditionObject.Add(tags);
+            JArray triggerConditionObjects = new JArray();
+            triggerConditionObjects.Add(triggerConditionObject);
+            
+
+            JProperty triggerConditions = new JProperty("triggerConditions", triggerConditionObjects);
+            j.Add(triggerConditions);
+            return j;
+            //return 
+            //        new JObject(
+            //            new JProperty("artifactAlias", "<Replace with build process name>"),
+            //            new JProperty("triggerConditions",
+            //            new JArray(
+            //                new JObject(
+            //                    new JProperty("sourceBranch", "<Replace with source branch>"),
+            //                    new JProperty("tags", new JArray()))),
+
+            //            new JProperty("triggerType", "artifactSource")));
+
+            // Need to add an automated trigger
+            /* 
+             {
+	"triggers": [{
+		"artifactAlias": "Build Process (dinzin) #2017714.17636",
+		"triggerConditions": [{
+			"sourceBranch": "master",
+			"tags": []
+		}],
+		"triggerType": "artifactSource"
+	}]
+}
+             
+             */
+        }
         private static JToken GetTriggersJson()
         {
             return new JArray(
@@ -464,15 +520,16 @@ namespace VSTS_Spike
                                 string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
 
                     using (HttpResponseMessage response = client.GetAsync(
-                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/dinzin/_apis/release/definitions?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
+                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/nige/_apis/release/definitions/1?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
                     {
                         response.EnsureSuccessStatusCode();
                         responseBody = await response.Content.ReadAsStringAsync();
                         Console.WriteLine(responseBody);
                     }
 
+                    string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", "auto");
+                    WriteRestResponseToFile(responseBody, path);
 
-                  
 
 
                 }
@@ -516,28 +573,13 @@ namespace VSTS_Spike
         static void Main(string[] args)
         {
 
-            ReleaseSpike();
-            return;
+            //ReleaseSpike();
+            //return;
             Console.WriteLine();
             Log("***************************", ConsoleColor.Yellow);
             Log("** XEKINA is Starting Up **", ConsoleColor.Yellow);
             Log("***************************", ConsoleColor.Yellow);
             string projectName = null;
-            
-            Log("Enter your project name");
-            do
-            {
-                projectName = Console.ReadLine();
-            } while (String.IsNullOrEmpty(projectName));
-            Log(string.Format("Your project will be called {0}", projectName));
-           
-
-            //// Get process templates
-            //ProcessHttpClient processClient = connection.GetClient<ProcessHttpClient>();
-            //var processes = processClient.GetProcessesAsync().Result;
-
-            
-
             string DeleteOldVSTSProjects = CloudConfigurationManager.GetSetting("DeleteOldVSTSProjects");
             if (DeleteOldVSTSProjects == "YES")
             {
@@ -549,13 +591,6 @@ namespace VSTS_Spike
                 foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
                 {
                     var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
-                    //var urlForTeamProject = ((ReferenceLink)teamProject.Links.Links["web"]).Href;
-                    
-                    //Console.WriteLine("Team Project '{0}' (Id: {1}) at Web Url: '{2}' & API Url: '{3}'",
-                    //teamProject.Name,
-                    //teamProject.Id,
-                    //urlForTeamProject,
-                    //teamProject.Url);
                     if (teamProject.Description == "This is a dummy project")
                     {
                         none = false;
@@ -567,14 +602,20 @@ namespace VSTS_Spike
                             Log(string.Format("Project {0} will be deleted!", teamProject.Name), ConsoleColor.Red);
                             projectHttpClient.QueueDeleteProject(teamProject.Id);
                             DeleteProjectResourceGroups(teamProject.Name);
-                        } 
+                        }
                     }
                 }
                 if (none) Log("I didnt find any projects that you might want to delete.");
-                
+
 
             }
-
+            Log("Enter your project name");
+            do
+            {
+                projectName = Console.ReadLine();
+            } while (String.IsNullOrEmpty(projectName));
+            Log(string.Format("Your project will be called {0}", projectName));
+           
             string ShouldCreateVSTSProject = CloudConfigurationManager.GetSetting("CreateVSTSProject");
             if (ShouldCreateVSTSProject == "YES")
             {
@@ -590,7 +631,6 @@ namespace VSTS_Spike
                     CommitSampleProject(projectName);
                 }
             }
-            
             
             string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
             if (ShouldCreateDevTestLab == "YES")
@@ -688,7 +728,7 @@ namespace VSTS_Spike
                                     content = reader.ReadToEnd();
                                     Console.WriteLine();
                                 }
-                                
+                                if
                                 GitChange change = new GitChange()
                                 {
                                     ChangeType = VersionControlChangeType.Add,
@@ -823,9 +863,6 @@ namespace VSTS_Spike
         }
 
    
-
-       
-
         private static void DeleteProjectResourceGroups(string resourceGroupName)
         {
             DeployerParameters parameters = new DeployerParameters();
