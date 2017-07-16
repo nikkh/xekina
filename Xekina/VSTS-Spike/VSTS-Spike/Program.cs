@@ -60,8 +60,6 @@ namespace VSTS_Spike
             }
         }
 
-
-
         private static void CreateBuildAndReleaseProcess(string projectName)
         {
 
@@ -728,20 +726,20 @@ namespace VSTS_Spike
                                     content = reader.ReadToEnd();
                                     Console.WriteLine();
                                 }
-                                if
+                                if (entry.FullName.Contains("Views/Home/Index.cshtml"))
+                                {
+                                    content.Replace("#Name_Placeholder#", projectName);
+                                }
                                 GitChange change = new GitChange()
                                 {
                                     ChangeType = VersionControlChangeType.Add,
                                     Item = new GitItem() { Path = $"{outputPath}" },
                                     NewContent = new ItemContent()
                                     {
-
-
                                         ContentType = ItemContentType.RawText,
                                         Content = content
                                     }
-                            
-                                    
+                                   
                                 };
 
                                 gChanges.Add(change);
@@ -777,6 +775,9 @@ namespace VSTS_Spike
                                 gChanges.Add(change);
 
                             }
+
+                           
+
                         }
                     }
                         // responseBody = response.Content.ReadAsStringAsync().Result;
