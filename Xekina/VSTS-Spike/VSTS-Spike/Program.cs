@@ -701,12 +701,7 @@ namespace VSTS_Spike
                 {
                     CreateBuildAndReleaseProcess(projectName);
                 }
-                string ShouldCommitSampleProject = CloudConfigurationManager.GetSetting("CommitSampleProject");
-                if (ShouldCommitSampleProject == "YES")
-                {
-                    CommitSampleProject(projectName);
-                }
-            }
+             }
             
             string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
             if (ShouldCreateDevTestLab == "YES")
@@ -721,6 +716,11 @@ namespace VSTS_Spike
                 CreateEnvironment(projectName, "DEV");
                 CreateEnvironment(projectName, "PROD");
                 Log("End of Deployment Environment Creation Phase.", ConsoleColor.Cyan);
+            }
+            string ShouldCommitSampleProject = CloudConfigurationManager.GetSetting("CommitSampleProject");
+            if (ShouldCommitSampleProject == "YES")
+            {
+                CommitSampleProject(projectName);
             }
             Log("***************************", ConsoleColor.Yellow);
             Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
