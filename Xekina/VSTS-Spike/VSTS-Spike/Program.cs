@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.Client;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
@@ -10,7 +9,6 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.Build.WebApi;
 
 using Microsoft.VisualStudio.Services.Operations;
 using System.Threading;
@@ -40,13 +38,98 @@ namespace VSTS_Spike
         
         static ProjectHttpClient projectHttpClient = null;
 
+        #region Utility Methods
         static VssConnection GetVssConnection()
         {
             VssCredentials creds = new VssClientCredentials();
             creds.Storage = new VssClientCredentialStorage();
             return new VssConnection(new Uri(c_collectionUri), creds);
         }
+        private static void WriteRestResponseToFile(string rest, string fileName)
+        {
+            // This text is added only once to the file.
+            if (!File.Exists(fileName))
+            {
+                // Create a file to write to.
 
+                File.WriteAllText(fileName, rest);
+            }
+        }
+        private static void Log(string logEntry, ConsoleColor colour = ConsoleColor.Gray)
+        {
+            Console.ForegroundColor = colour;
+            Console.WriteLine(logEntry);
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Trace.TraceInformation(logEntry);
+        }
+        private static string GetOutputPath(string fullName)
+        {
+            // This whole things is a bit rubbish...
+            // Really need to parameterise the name and location (possibly branch?) of the sample project and 
+            // then read the contents from the .csproj file?
+            string outputPath = null;
+
+            if (fullName.Contains("XekinaSample.sln"))
+            {
+                outputPath = "XekinaSample.sln";
+            }
+            else
+            {
+
+
+                var startIndex = fullName.IndexOf("XekinaWebApp");
+                int length = fullName.Length - startIndex + 1;
+                outputPath = fullName.Substring(startIndex);
+
+            }
+            return outputPath;
+        }
+        private static JObject CallRestApi(HttpMethod method, string projectName, string RestofUrl, bool release = false, string body = null)
+        {
+            string responseBody = "";
+            string urlBase = CloudConfigurationManager.GetSetting("UrlBase");
+            if (release) urlBase = CloudConfigurationManager.GetSetting("UrlBaseRelease");
+            if ((method == HttpMethod.Post) && (body == null)) throw new Exception("CallRestApi - body cannot be null for post operations");
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                   Convert.ToBase64String(
+                       System.Text.ASCIIEncoding.ASCII.GetBytes(
+                           string.Format("{0}:{1}", "", CloudConfigurationManager.GetSetting("VstsPersonalAccessToken")))));
+
+                var requestUri = new Uri(string.Format("{0}/{1}/_apis/{2}", urlBase, projectName, RestofUrl));
+                var request = new HttpRequestMessage(method, requestUri);
+                // Setup header(s)
+                request.Headers.Add("Accept", "application/json");
+
+                // Add body content
+                if (method == HttpMethod.Post)
+                {
+                    request.Content = new StringContent(
+                        body,
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+                }
+
+                // Send the request
+                using (HttpResponseMessage response = client.SendAsync(request).Result)
+                {
+                    responseBody = response.Content.ReadAsStringAsync().Result;
+                    Log(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception("Error making Api call!");
+                    }
+                }
+
+                return JObject.Parse(responseBody);
+            }
+        }
+        #endregion
+
+        #region Json Helpers
         private static JObject GetJsonStringContents(string jsonString)
         {
             JObject json = new JObject();
@@ -59,7 +142,114 @@ namespace VSTS_Spike
                 }
             }
         }
+        private static JToken GetReleaseEnvironmentsJson(string snippetPath)
+        {
+            return GetJsonFileContents("./JsonSnippets/Release-Environment-eliot.json")["environments"];
+        }
+        private static JToken GetReleaseArtifactsJson(string snippetPath)
+        {
+            return GetJsonFileContents("./JsonSnippets/ArtifactDefinition.json")["artifacts"];
+        }
+        private static JToken GetBuildNameJson(string projectName)
+        {
+            DateTime d = DateTime.Now;
+            return string.Format("Build Process ({0}) #{1}{2}{3}.{4}{5}{6}", projectName, d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second);
+        }
+        private static JToken GetReleaseNameJson(string projectName)
+        {
+            DateTime d = DateTime.Now;
+            return string.Format("Release Process ({0}) #{1}{2}{3}.{4}{5}{6}", projectName, d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second);
+        }
+        private static JToken GetQueueJson()
+        {
+            return new JObject(
+             new JProperty("Pool",
+                new JObject(
+                    new JProperty("Name", "Hosted"),
+                    new JProperty("IsHosted", "True"))),
+            new JProperty("Name", "Hosted"));
+        }
+        private static JToken GetRepositoryJson(string projectName)
+        {
+            return new JObject(
+                new JProperty("Properties", new JObject(
+                new JProperty("cleanOptions", "0"),
+                new JProperty("labelSources", "0"),
+                new JProperty("labelSourcesFormat", "$(build.buildNumber)"),
+                new JProperty("reportBuildStatus", "true"),
+                new JProperty("gitLfsSupport", "false"),
+                new JProperty("skipSyncSource", "false"),
+                new JProperty("checkoutNestedSubmodules", "false"),
+                new JProperty("fetchDepth", "0"))),
+             new JProperty("Type", "TfsGit"),
+             new JProperty("Name", projectName),
+             new JProperty("DefaultBranch", "refs/heads/master"),
+             new JProperty("Clean", "false"),
+             new JProperty("CheckoutSubmodules", "false"));
+        }
+        private static JObject GetServiceEndpointJson()
+        {
+            JObject j = new JObject(
+                     new JProperty("name", "<insert name here>"),
+                     new JProperty("data", new JObject(
+                         new JProperty("subscriptionId", "<insert subscriptionid here>"),
+                         new JProperty("subscriptionName", "Nicks Internal Subscription"),
+                         new JProperty("creationMode", "Automatic")
+                         )),
+                     new JProperty("type", "azurerm"),
+                     new JProperty("url", "https://management.azure.com/"),
+                     new JProperty("authorization", new JObject(
+                     new JProperty("scheme", "ServicePrincipal"),
+                     new JProperty("parameters", new JObject(
+                     new JProperty("tenantid", "<insert tenantid here"))))));
+            return j;
+        }
+        private static JObject GetReleaseTriggerJson()
+        {
+            JObject j = new JObject();
+            j.Add(new JProperty("artifactAlias", "<Replace with build process name>"));
+            j.Add(new JProperty("triggerType", "artifactSource"));
 
+            JProperty sourceBranch = new JProperty("sourceBranch", "<Replace with source branch>");
+            JProperty tags = new JProperty("tags", new JArray());
+            JObject triggerConditionObject = new JObject();
+            triggerConditionObject.Add(sourceBranch);
+            triggerConditionObject.Add(tags);
+            JArray triggerConditionObjects = new JArray();
+            triggerConditionObjects.Add(triggerConditionObject);
+
+
+            JProperty triggerConditions = new JProperty("triggerConditions", triggerConditionObjects);
+            j.Add(triggerConditions);
+            return j;
+           
+        }
+        private static JToken GetTriggersJson()
+        {
+            return new JArray(
+                         new JObject(
+                             new JProperty("branchFilters", new JArray("+refs/heads/master")),
+                             new JProperty("pathFilters"),
+                             new JProperty("batchChanges", false),
+                             new JProperty("maxConcurrentBuildsPerBranch", 1),
+                             new JProperty("pollingInterval", 0),
+                             new JProperty("triggerType", "continuousIntegration")));
+        }
+        private static JObject GetJsonFileContents(string pathToJson)
+        {
+            JObject templatefileContent = new JObject();
+            using (StreamReader file = File.OpenText(pathToJson))
+            {
+                using (JsonTextReader reader = new JsonTextReader(file))
+                {
+                    templatefileContent = (JObject)JToken.ReadFrom(reader);
+                    return templatefileContent;
+                }
+            }
+        }
+        #endregion
+
+        #region Business Logic
         private static void CreateBuildAndReleaseProcess(string projectName)
         {
 
@@ -82,7 +272,7 @@ namespace VSTS_Spike
             foreach (var item in buildDefinition["build"])
             {
                 string s = item.ToString();
-                if (item["displayName"].ToString()=="Test Assemblies")
+                if (item["displayName"].ToString() == "Test Assemblies")
                 {
                     item["inputs"]["codeCoverageEnabled"] = "true";
                 }
@@ -145,29 +335,18 @@ namespace VSTS_Spike
             releaseDefinition.Add(new JProperty("triggers", tempest));
 
             releaseDefinition["triggers"][0] = releaseTriggerJson;
-            
 
-            /*
-             "conditions":[
-                {
-                  "name":"ReleaseStarted",
-                  "conditionType":"event",
-                  "value":""
-                }]
-             
-             */
-
-            JObject condition = new  JObject();
+            JObject condition = new JObject();
             condition.Add(new JProperty("name", "ReleaseStarted"));
             condition.Add(new JProperty("conditionType", "event"));
             condition.Add(new JProperty("value", ""));
             JArray conditions = new JArray(condition);
-            releaseDefinition["environments"][0]["conditions"]=conditions;
+            releaseDefinition["environments"][0]["conditions"] = conditions;
             string temp = releaseDefinition.ToString();
             result = CreateReleaseProcess(projectName, releaseDefinition, vstsPersonalAccessToken);
-             resultString = result.ToString();
+            resultString = result.ToString();
             // temporarily log the output to help with the release process request...
-             path = String.Format(@"./Workfiles/ReleaseProcessDefinition-{0}.json", projectName);
+            path = String.Format(@"./Workfiles/ReleaseProcessDefinition-{0}.json", projectName);
             WriteRestResponseToFile(resultString, path);
 
 
@@ -178,20 +357,6 @@ namespace VSTS_Spike
             Log(String.Format("Release Process for project {0} created.", projectName));
             return;
         }
-
-       
-
-        private static void WriteRestResponseToFile(string rest, string fileName)
-        {
-            // This text is added only once to the file.
-            if (!File.Exists(fileName))
-            {
-                // Create a file to write to.
-
-                File.WriteAllText(fileName, rest);
-            }
-        }
-
         private static JObject CreateServiceEndpoint(string projectName)
         {
             JObject serviceEndpointJson = GetServiceEndpointJson();
@@ -201,56 +366,11 @@ namespace VSTS_Spike
             string body = serviceEndpointJson.ToString();
             return CallRestApi(HttpMethod.Post, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1", false, body);
         }
-
         private static string GetServiceEndpoints(string projectName)
         {
             var response = CallRestApi(HttpMethod.Get, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1");
             return response.ToString();
-            
-        }
 
-        private static JObject CallRestApi(HttpMethod method, string projectName, string RestofUrl, bool release = false, string body = null)
-        {
-            string responseBody = "";
-            string urlBase = CloudConfigurationManager.GetSetting("UrlBase");
-            if (release) urlBase = CloudConfigurationManager.GetSetting("UrlBaseRelease");
-            if ((method == HttpMethod.Post) && (body == null)) throw new Exception("CallRestApi - body cannot be null for post operations");
-
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                   Convert.ToBase64String(
-                       System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", CloudConfigurationManager.GetSetting("VstsPersonalAccessToken")))));
-                
-                var requestUri = new Uri(string.Format("{0}/{1}/_apis/{2}", urlBase, projectName, RestofUrl));
-                var request = new HttpRequestMessage(method, requestUri);
-                // Setup header(s)
-                request.Headers.Add("Accept", "application/json");
-
-                // Add body content
-                if (method == HttpMethod.Post)
-                {
-                    request.Content = new StringContent(
-                        body,
-                        Encoding.UTF8,
-                        "application/json"
-                    );
-                }
-
-                // Send the request
-                using (HttpResponseMessage response = client.SendAsync(request).Result)
-                {
-                    responseBody = response.Content.ReadAsStringAsync().Result;
-                    Log(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new Exception("Error making Api call!");
-                    }
-                }
-                
-                return JObject.Parse(responseBody);
-            }
         }
         private static JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string vstsPersonalAccessToken)
         {
@@ -261,7 +381,7 @@ namespace VSTS_Spike
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
                            string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
-                
+
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions?api-version=3.0-preview.1", c_collectionUri_release, projectName));
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
                 // Setup header(s)
@@ -288,17 +408,6 @@ namespace VSTS_Spike
                 return JObject.Parse(responseBody);
             }
         }
-
-        private static JToken GetReleaseEnvironmentsJson(string snippetPath)
-        {
-            return GetJsonFileContents("./JsonSnippets/Release-Environment-eliot.json")["environments"];
-        }
-        private static JToken GetReleaseArtifactsJson(string snippetPath)
-        {
-            return GetJsonFileContents("./JsonSnippets/ArtifactDefinition.json")["artifacts"];
-        }
-
-
         private static JObject CreateBuildProcess(string projectName, JObject buildDefinition, string vstsPersonalAccessToken)
         {
             string responseBody = null;
@@ -334,121 +443,6 @@ namespace VSTS_Spike
             }
             return JObject.Parse(responseBody);
         }
-
-        private static JToken GetBuildNameJson(string projectName)
-        {
-            DateTime d = DateTime.Now;
-            return string.Format("Build Process ({0}) #{1}{2}{3}.{4}{5}{6}", projectName, d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second);
-        }
-
-        private static JToken GetReleaseNameJson(string projectName)
-        {
-            DateTime d = DateTime.Now;
-            return string.Format("Release Process ({0}) #{1}{2}{3}.{4}{5}{6}", projectName, d.Year, d.Month, d.Day, d.Hour, d.Minute, d.Second);
-        }
-
-        private static JToken GetQueueJson()
-        {
-            return new JObject(
-             new JProperty("Pool",
-                new JObject(
-                    new JProperty("Name", "Hosted"),
-                    new JProperty("IsHosted", "True"))),
-            new JProperty("Name", "Hosted"));
-        }
-
-        private static JToken GetRepositoryJson(string projectName)
-        {
-            return new JObject(
-                new JProperty("Properties", new JObject(
-                new JProperty("cleanOptions", "0"),
-                new JProperty("labelSources", "0"),
-                new JProperty("labelSourcesFormat", "$(build.buildNumber)"),
-                new JProperty("reportBuildStatus", "true"),
-                new JProperty("gitLfsSupport", "false"),
-                new JProperty("skipSyncSource", "false"),
-                new JProperty("checkoutNestedSubmodules", "false"),
-                new JProperty("fetchDepth", "0"))),
-             new JProperty("Type", "TfsGit"),
-             new JProperty("Name", projectName),
-             new JProperty("DefaultBranch", "refs/heads/master"),
-             new JProperty("Clean", "false"),
-             new JProperty("CheckoutSubmodules", "false"));
-        }
-
-        private static JObject GetServiceEndpointJson()
-        {
-           JObject j = new JObject(
-                    new JProperty("name", "<insert name here>"),
-                    new JProperty("data", new JObject(
-                        new JProperty("subscriptionId", "<insert subscriptionid here>"),
-                        new JProperty("subscriptionName", "Nicks Internal Subscription"),
-                        new JProperty("creationMode", "Automatic")
-                        )),
-                    new JProperty("type", "azurerm"),
-                    new JProperty("url", "https://management.azure.com/"),
-                    new JProperty("authorization", new JObject(
-                    new JProperty("scheme", "ServicePrincipal"),
-                    new JProperty("parameters", new JObject(
-                    new JProperty("tenantid", "<insert tenantid here"))))));
-            return j;
-        }
-        private static JObject GetReleaseTriggerJson()
-        {
-            JObject j = new JObject();
-            j.Add(new JProperty("artifactAlias", "<Replace with build process name>"));
-            j.Add(new JProperty("triggerType", "artifactSource"));
-
-            JProperty sourceBranch = new JProperty("sourceBranch", "<Replace with source branch>");
-            JProperty tags = new JProperty("tags", new JArray());
-            JObject triggerConditionObject = new JObject();
-            triggerConditionObject.Add(sourceBranch);
-            triggerConditionObject.Add(tags);
-            JArray triggerConditionObjects = new JArray();
-            triggerConditionObjects.Add(triggerConditionObject);
-            
-
-            JProperty triggerConditions = new JProperty("triggerConditions", triggerConditionObjects);
-            j.Add(triggerConditions);
-            return j;
-            //return 
-            //        new JObject(
-            //            new JProperty("artifactAlias", "<Replace with build process name>"),
-            //            new JProperty("triggerConditions",
-            //            new JArray(
-            //                new JObject(
-            //                    new JProperty("sourceBranch", "<Replace with source branch>"),
-            //                    new JProperty("tags", new JArray()))),
-
-            //            new JProperty("triggerType", "artifactSource")));
-
-            // Need to add an automated trigger
-            /* 
-             {
-	"triggers": [{
-		"artifactAlias": "Build Process (dinzin) #2017714.17636",
-		"triggerConditions": [{
-			"sourceBranch": "master",
-			"tags": []
-		}],
-		"triggerType": "artifactSource"
-	}]
-}
-             
-             */
-        }
-        private static JToken GetTriggersJson()
-        {
-            return new JArray(
-                         new JObject(
-                             new JProperty("branchFilters", new JArray("+refs/heads/master")),
-                             new JProperty("pathFilters"),
-                             new JProperty("batchChanges", false),
-                             new JProperty("maxConcurrentBuildsPerBranch", 1),
-                             new JProperty("pollingInterval", 0),
-                             new JProperty("triggerType", "continuousIntegration")));
-        }
-
         private static JObject GetBuildDefinitionTemplate(string c_collectionUri, string projectName, string vstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
@@ -477,8 +471,6 @@ namespace VSTS_Spike
             }
             return new JObject(buildDefinitionTemplate["template"].Children());
         }
-
-
         private static JObject GetReleaseDefinitionTemplate(string c_collectionUri, string projectName, string vstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
@@ -491,7 +483,7 @@ namespace VSTS_Spike
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
                            string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
 
-                
+
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions/environmenttemplates?templateId={2}&api-version=3.0-preview.1", c_collectionUri_release, projectName, templateId));
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
                 // Setup header(s)
@@ -508,226 +500,6 @@ namespace VSTS_Spike
             }
             return new JObject(releaseDefinitionTemplate);
         }
-
-        public static async void ReleaseSpike()
-        {
-            try
-            {
-                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
-                string responseBody = null;
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Accept.Add(
-                        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                        Convert.ToBase64String(
-                            System.Text.ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
-
-                    using (HttpResponseMessage response = client.GetAsync(
-                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/nige/_apis/release/definitions/1?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
-                    {
-                        response.EnsureSuccessStatusCode();
-                        responseBody = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(responseBody);
-                    }
-
-                    string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", "auto");
-                    WriteRestResponseToFile(responseBody, path);
-
-
-
-                }
-
-                JObject releaseDefinitionCreateSnippet = GetJsonFileContents("./JsonSnippets/releasedefinition-create.json");
-                string releaseName = string.Format("Generated Release process #{0}", DateTime.Now.Ticks);
-                releaseDefinitionCreateSnippet["name"] = releaseName;
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                       Convert.ToBase64String(
-                           System.Text.ASCIIEncoding.ASCII.GetBytes(
-                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
-
-                    var requestUri = new Uri("https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
-                    var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
-                    // Setup header(s)
-                    request.Headers.Add("Accept", "application/json");
-
-                    // Add body content
-                    request.Content = new StringContent(
-                        releaseDefinitionCreateSnippet.ToString(),
-                        Encoding.UTF8,
-                        "application/json"
-                    );
-
-                    // Send the request
-                    using (HttpResponseMessage response = client.SendAsync(request).Result)
-                    {
-                        //response.EnsureSuccessStatusCode();
-                        responseBody = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(responseBody);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
-
-        public static async void BuildSpike()
-        {
-            try
-            {
-                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
-                string responseBody = null;
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Accept.Add(
-                        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                        Convert.ToBase64String(
-                            System.Text.ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
-
-                    using (HttpResponseMessage response = client.GetAsync(
-                                "https://nicks-ms-subscription.visualstudio.com/DefaultCollection/murhin/_apis/build/definitions/99?api-version=2.0").Result)
-                    {
-                        response.EnsureSuccessStatusCode();
-                        responseBody = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(responseBody);
-                    }
-
-                    string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", "auto");
-                    WriteRestResponseToFile(responseBody, path);
-
-
-
-                }
-
-                JObject releaseDefinitionCreateSnippet = GetJsonFileContents("./JsonSnippets/releasedefinition-create.json");
-                string releaseName = string.Format("Generated Release process #{0}", DateTime.Now.Ticks);
-                releaseDefinitionCreateSnippet["name"] = releaseName;
-                using (HttpClient client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                       Convert.ToBase64String(
-                           System.Text.ASCIIEncoding.ASCII.GetBytes(
-                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
-
-                    var requestUri = new Uri("https://nicks-ms-subscription.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
-                    var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
-                    // Setup header(s)
-                    request.Headers.Add("Accept", "application/json");
-
-                    // Add body content
-                    request.Content = new StringContent(
-                        releaseDefinitionCreateSnippet.ToString(),
-                        Encoding.UTF8,
-                        "application/json"
-                    );
-
-                    // Send the request
-                    using (HttpResponseMessage response = client.SendAsync(request).Result)
-                    {
-                        //response.EnsureSuccessStatusCode();
-                        responseBody = await response.Content.ReadAsStringAsync();
-                        Console.WriteLine(responseBody);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
-        static void Main(string[] args)
-        {
-            //BuildSpike();
-            //return;
-            
-            //ReleaseSpike();
-            //return;
-            Console.WriteLine();
-            Log("***************************", ConsoleColor.Yellow);
-            Log("** XEKINA is Starting Up **", ConsoleColor.Yellow);
-            Log("***************************", ConsoleColor.Yellow);
-            string projectName = null;
-            string DeleteOldVSTSProjects = CloudConfigurationManager.GetSetting("DeleteOldVSTSProjects");
-            if (DeleteOldVSTSProjects == "YES")
-            {
-                Log("Looking for previous projects you may wish to delete...", ConsoleColor.Cyan);
-                // Retrieve a list of projects from the account. (and ask if they should be deleted).  This is to tidy up my test data.
-                projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
-                bool none = true;
-                //then - same as above..iterate over the project references(with a hard-coded pagination of the first 10 entries only)
-                foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
-                {
-                    var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
-                    if (teamProject.Description == "This is a dummy project")
-                    {
-                        none = false;
-                        Log(string.Format("Delete project {0}? (Y/N) default=No", teamProject.Name), ConsoleColor.White);
-                        string s = Console.ReadLine();
-
-                        if (s == "Y")
-                        {
-                            Log(string.Format("Project {0} will be deleted!", teamProject.Name), ConsoleColor.Red);
-                            projectHttpClient.QueueDeleteProject(teamProject.Id);
-                            DeleteProjectResourceGroups(teamProject.Name);
-                        }
-                    }
-                }
-                if (none) Log("I didnt find any projects that you might want to delete.");
-
-
-            }
-            Log("Enter your project name");
-            do
-            {
-                projectName = Console.ReadLine();
-            } while (String.IsNullOrEmpty(projectName));
-            Log(string.Format("Your project will be called {0}", projectName));
-           
-            string ShouldCreateVSTSProject = CloudConfigurationManager.GetSetting("CreateVSTSProject");
-            if (ShouldCreateVSTSProject == "YES")
-            {
-                CreateVSTSProject(projectName);
-                string ShouldCreateBuildAndReleaseProcess = CloudConfigurationManager.GetSetting("CreateBuildAndReleaseProcess");
-                if (ShouldCreateBuildAndReleaseProcess == "YES")
-                {
-                    CreateBuildAndReleaseProcess(projectName);
-                }
-             }
-            
-            string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
-            if (ShouldCreateDevTestLab == "YES")
-            {
-                CreateDevTestLab(projectName);
-            }
-
-            string ShouldCreateEnvironments = CloudConfigurationManager.GetSetting("CreateEnvironments");
-            if (ShouldCreateEnvironments == "YES")
-            {
-                Log("Deployment Environment Creation Phase is starting", ConsoleColor.Cyan);
-                CreateEnvironment(projectName, "DEV");
-                CreateEnvironment(projectName, "PROD");
-                Log("End of Deployment Environment Creation Phase.", ConsoleColor.Cyan);
-            }
-            string ShouldCommitSampleProject = CloudConfigurationManager.GetSetting("CommitSampleProject");
-            if (ShouldCommitSampleProject == "YES")
-            {
-                CommitSampleProject(projectName);
-            }
-            Log("***************************", ConsoleColor.Yellow);
-            Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
-            Log("***************************", ConsoleColor.Yellow);
-            return;
-        }
-
         private static void CommitSampleProject(string projectName)
         {
             VssConnection connection = GetVssConnection();
@@ -736,20 +508,20 @@ namespace VSTS_Spike
             //GitRef defaultBranch = gitClient.GetRefsAsync(repo.Id).Result.First();
             List<GitChange> gChanges = new List<GitChange>();
             // next, craft the branch and commit that we'll push
-                     
+
             GitRefUpdate newBranch = new GitRefUpdate()
             {
                 Name = $"refs/heads/master",
                 OldObjectId = new string('0', 40)
-                
+
             };
 
             string url = "https://api.github.com/repos/nikkh/xekina/zipball/master";
-            
-              HttpMethod method = HttpMethod.Get;
-            
+
+            HttpMethod method = HttpMethod.Get;
+
             string body = "";
-           
+
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://api.github.com/");
@@ -783,7 +555,7 @@ namespace VSTS_Spike
                     }
                     using (Stream responseStream = response.Content.ReadAsStreamAsync().Result)
                     {
-                       
+
                         using (ZipArchive archive = new ZipArchive(responseStream, ZipArchiveMode.Read))
                         {
                             if (archive.Entries.Count == 0)
@@ -797,7 +569,7 @@ namespace VSTS_Spike
                                 {
                                     Log("Solution " + entry.Name + "was identified");
                                 }
-                               string outputPath = GetOutputPath(entry.FullName);
+                                string outputPath = GetOutputPath(entry.FullName);
                                 string content = null;
                                 using (StreamReader reader = new StreamReader(entry.Open()))
                                 {
@@ -818,13 +590,13 @@ namespace VSTS_Spike
                                         ContentType = ItemContentType.RawText,
                                         Content = content
                                     }
-                                   
+
                                 };
 
                                 gChanges.Add(change);
 
                             }
-                          
+
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample.sln")))
                             {
                                 Console.WriteLine("{0} was discovered in the archive", entry.FullName);
@@ -855,16 +627,16 @@ namespace VSTS_Spike
 
                             }
 
-                           
+
 
                         }
                     }
-                        // responseBody = response.Content.ReadAsStringAsync().Result;
+                    // responseBody = response.Content.ReadAsStringAsync().Result;
                     Log(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
-                   
+
                 }
 
-                
+
             }
 
 
@@ -922,36 +694,76 @@ namespace VSTS_Spike
                 Commits = new GitCommitRef[] { newCommit },
             }, repo.Id).Result;
         }
-
-        private static string GetOutputPath(string fullName)
+        private static void CreateDevTestLab(string projectName)
         {
-            // This whole things is a bit rubbish...
-            // Really need to parameterise the name and location (possibly branch?) of the sample project and 
-            // then read the contents from the .csproj file?
-            string outputPath = null;
+            Log("Dev Test Lab Creation Phase is starting", ConsoleColor.Cyan);
+            Log(String.Format("Creating Lab for project {0}", projectName));
 
-            if (fullName.Contains("XekinaSample.sln"))
-            {
-                outputPath = "XekinaSample.sln";
-            }
-            else
-            {
-               
-               
-                    var startIndex = fullName.IndexOf("XekinaWebApp");
-                    int length = fullName.Length - startIndex + 1;
-                    outputPath = fullName.Substring(startIndex);
-               
-            }
-            return outputPath;
+            DeployerParameters parameters = new DeployerParameters();
+            parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
+            Log("SubscriptionId = " + parameters.SubscriptionId);
+            parameters.ResourceGroupName = string.Format("{0}-{1}", projectName, "lab");
+            Log("Lab resource group is " + parameters.ResourceGroupName, ConsoleColor.Magenta);
+            parameters.DeploymentName = string.Format("{0}-{1}-{2}", projectName, "lab", "deployment");
+            Log("Deployment will be called " + parameters.DeploymentName);
+            parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
+            Log("Lab will be created in " + parameters.ResourceGroupLocation);
+            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath");
+            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
+            // TODO: Get this from app.settings
+            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+            parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
+            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
+
+            string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
+            LabTemplateParameters labParameters = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
+            labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "lab");
+            labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
+            labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "repo");
+            labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
+            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
+            labParameters.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
+            parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
+            Deployer deployer = new Deployer(parameters);
+            deployer.Deploy().SyncResult();
+            Log("End of Dev Test Lab Creation Phase.", ConsoleColor.Cyan);
         }
+        private static void CreateEnvironment(string projectName, string environment)
+        {
+            string environmentHostingPlanSku = CloudConfigurationManager.GetSetting(string.Format("HostingPlanSkuName{0}", environment));
+            DeployerParameters parameters = new DeployerParameters();
+            Console.WriteLine("Creating environment " + environment);
+            parameters.ResourceGroupName = String.Format("{0}-{1}", projectName, environment).ToLower();
+            parameters.DeploymentName = String.Format("{0}-{1}-deployment", projectName, environment).ToLower();
+            parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
+            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("EnvTemplateFilePath");
+            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("EnvTemplateParameterFilePath");
 
-   
+            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+            parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
+            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
+            parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
+
+            string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
+            EnvironmentTemplateParameters envParameters = JsonConvert.DeserializeObject<EnvironmentTemplateParameters>(templateParameters);
+            envParameters.parameters.projectName.value = projectName;
+            envParameters.parameters.environmentName.value = environment;
+            envParameters.parameters.skuName.value = environmentHostingPlanSku;
+            envParameters.parameters.administratorLogin.value = CloudConfigurationManager.GetSetting("EnvSQLAdmin");
+            envParameters.parameters.administratorLoginPassword.value = CloudConfigurationManager.GetSetting("EnvSQLAdminPassword");
+            parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
+            Deployer deployer = new Deployer(parameters);
+            deployer.Deploy().SyncResult();
+        }
         private static void DeleteProjectResourceGroups(string resourceGroupName)
         {
             DeployerParameters parameters = new DeployerParameters();
             parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
-                        
+
             parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
             parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
             parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
@@ -964,7 +776,6 @@ namespace VSTS_Spike
             Log(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", resourceGroupName, "prod", parameters.SubscriptionId), ConsoleColor.Magenta);
             deployer.DeleteResourceGroup(String.Format("{0}-{1}", resourceGroupName, "prod"));
         }
-
         private static void CreateVSTSProject(string projectName)
         {
             // Create a new project
@@ -1057,109 +868,9 @@ namespace VSTS_Spike
             tsi.Id = node.Identifier;
             x = workClient.PostTeamIterationAsync(tsi, tc).Result;
             VssConnection connection = GetVssConnection();
-            // test putting the sample project into GiT.
-            // This would actually retrieve the files from the core template project.
 
-            // Used later - move closer to where its needed
-
-            //GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
-            //var repo = gitClient.GetRepositoryAsync(c_projectname, c_reponame).Result;
-            //gitClient = connection.GetClient<GitHttpClient>();
-            //repo = gitClient.GetRepositoryAsync(createdProject.Name, createdProject.Name).Result;
-            //GitHelper gh = new GitHelper(connection);
-            //var push = gh.CreatePush(createdProject.Name, repo.Name);
-            //var pushes = gh.ListPushesIntoMaster(createdProject.Name, repo.Name);
             Log("End of VSTS Project Creation Phase.", ConsoleColor.Cyan);
         }
-
-        private static JObject GetJsonFileContents(string pathToJson)
-        {
-            JObject templatefileContent = new JObject();
-            using (StreamReader file = File.OpenText(pathToJson))
-            {
-                using (JsonTextReader reader = new JsonTextReader(file))
-                {
-                    templatefileContent = (JObject)JToken.ReadFrom(reader);
-                    return templatefileContent;
-                }
-            }
-        }
-
-        private static void CreateDevTestLab(string projectName)
-        {
-            Log("Dev Test Lab Creation Phase is starting", ConsoleColor.Cyan);
-            Log(String.Format("Creating Lab for project {0}", projectName));
-
-            DeployerParameters parameters = new DeployerParameters();
-            parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
-            Log("SubscriptionId = " + parameters.SubscriptionId);
-            parameters.ResourceGroupName = string.Format("{0}-{1}", projectName, "lab");
-            Log("Lab resource group is " + parameters.ResourceGroupName, ConsoleColor.Magenta);
-            parameters.DeploymentName = string.Format("{0}-{1}-{2}", projectName, "lab", "deployment");
-            Log("Deployment will be called " + parameters.DeploymentName);
-            parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
-            Log("Lab will be created in " + parameters.ResourceGroupLocation);
-            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath");
-            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
-            // TODO: Get this from app.settings
-            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
-            parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
-            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
-
-            string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
-            LabTemplateParameters labParameters = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
-            labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "lab");
-            labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
-            labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "repo");
-            labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
-            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-            labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
-            labParameters.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
-            parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
-            Deployer deployer = new Deployer(parameters);
-            deployer.Deploy().SyncResult();
-            Log("End of Dev Test Lab Creation Phase.", ConsoleColor.Cyan);
-        }
-
-        private static void CreateEnvironment(string projectName, string environment)
-        {
-            string environmentHostingPlanSku = CloudConfigurationManager.GetSetting(string.Format("HostingPlanSkuName{0}", environment));
-            DeployerParameters parameters = new DeployerParameters();
-            Console.WriteLine("Creating environment " + environment);
-            parameters.ResourceGroupName = String.Format("{0}-{1}", projectName, environment).ToLower();
-            parameters.DeploymentName = String.Format("{0}-{1}-deployment", projectName, environment).ToLower();
-            parameters.ResourceGroupLocation = CloudConfigurationManager.GetSetting("ResourceGroupLocation");
-            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("EnvTemplateFilePath");
-            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("EnvTemplateParameterFilePath");
-           
-            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
-            parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
-            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
-            parameters.SubscriptionId = CloudConfigurationManager.GetSetting("SubscriptionId");
-
-            string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
-            EnvironmentTemplateParameters envParameters = JsonConvert.DeserializeObject<EnvironmentTemplateParameters>(templateParameters);
-            envParameters.parameters.projectName.value = projectName;
-            envParameters.parameters.environmentName.value = environment;
-            envParameters.parameters.skuName.value = environmentHostingPlanSku;
-            envParameters.parameters.administratorLogin.value = CloudConfigurationManager.GetSetting("EnvSQLAdmin");
-            envParameters.parameters.administratorLoginPassword.value = CloudConfigurationManager.GetSetting("EnvSQLAdminPassword");
-            parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
-            Deployer deployer = new Deployer(parameters);
-            deployer.Deploy().SyncResult();
-        }
-
-        private static void Log(string logEntry, ConsoleColor colour = ConsoleColor.Gray)
-        {
-            Console.ForegroundColor = colour;
-            Console.WriteLine(logEntry);
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Trace.TraceInformation(logEntry);
-        }
-
         private static WorkItemClassificationNode AddIteration(Guid projectId, string iterationName, DateTime startDate, DateTime endDate, string path = null)
         {
             WorkItemClassificationNode iteration = new WorkItemClassificationNode
@@ -1180,10 +891,9 @@ namespace VSTS_Spike
             var x = workItemTrackingClient.CreateOrUpdateClassificationNodeAsync(iteration, projectId, TreeStructureGroup.Iterations, path).Result;
             return x;
         }
-
         private static string CreateProject(ProjectHttpClient client, string projectName)
         {
-            
+
             // We can also create new projects, i.e. like this:
             var newTeamProjectToCreate = new TeamProject();
             //var somewhatRandomValueForProjectName = projectName;
@@ -1241,5 +951,231 @@ namespace VSTS_Spike
             projectCreationOperation.ResultMessage ?? "n.a."));
             return newTeamProjectToCreate.Name;
         }
+        #endregion
+
+        #region Test Methods
+        public static async void ReleaseSpike()
+        {
+            try
+            {
+                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+                string responseBody = null;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                        Convert.ToBase64String(
+                            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    using (HttpResponseMessage response = client.GetAsync(
+                                "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/nige/_apis/release/definitions/1?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
+                    {
+                        response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+
+                    string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", "auto");
+                    WriteRestResponseToFile(responseBody, path);
+
+
+
+                }
+
+                JObject releaseDefinitionCreateSnippet = GetJsonFileContents("./JsonSnippets/releasedefinition-create.json");
+                string releaseName = string.Format("Generated Release process #{0}", DateTime.Now.Ticks);
+                releaseDefinitionCreateSnippet["name"] = releaseName;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                       Convert.ToBase64String(
+                           System.Text.ASCIIEncoding.ASCII.GetBytes(
+                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    var requestUri = new Uri("https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
+                    var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+                    // Setup header(s)
+                    request.Headers.Add("Accept", "application/json");
+
+                    // Add body content
+                    request.Content = new StringContent(
+                        releaseDefinitionCreateSnippet.ToString(),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    // Send the request
+                    using (HttpResponseMessage response = client.SendAsync(request).Result)
+                    {
+                        //response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+        public static async void BuildSpike()
+        {
+            try
+            {
+                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+                string responseBody = null;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Accept.Add(
+                        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                        Convert.ToBase64String(
+                            System.Text.ASCIIEncoding.ASCII.GetBytes(
+                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    using (HttpResponseMessage response = client.GetAsync(
+                                "https://nicks-ms-subscription.visualstudio.com/DefaultCollection/murhin/_apis/build/definitions/99?api-version=2.0").Result)
+                    {
+                        response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+
+                    string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", "auto");
+                    WriteRestResponseToFile(responseBody, path);
+
+
+
+                }
+
+                JObject releaseDefinitionCreateSnippet = GetJsonFileContents("./JsonSnippets/releasedefinition-create.json");
+                string releaseName = string.Format("Generated Release process #{0}", DateTime.Now.Ticks);
+                releaseDefinitionCreateSnippet["name"] = releaseName;
+                using (HttpClient client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                       Convert.ToBase64String(
+                           System.Text.ASCIIEncoding.ASCII.GetBytes(
+                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+
+                    var requestUri = new Uri("https://nicks-ms-subscription.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
+                    var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+                    // Setup header(s)
+                    request.Headers.Add("Accept", "application/json");
+
+                    // Add body content
+                    request.Content = new StringContent(
+                        releaseDefinitionCreateSnippet.ToString(),
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+
+                    // Send the request
+                    using (HttpResponseMessage response = client.SendAsync(request).Result)
+                    {
+                        //response.EnsureSuccessStatusCode();
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine(responseBody);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+        }
+        #endregion
+
+        static void Main(string[] args)
+        {
+            //BuildSpike();
+            //return;
+            
+            //ReleaseSpike();
+            //return;
+            Console.WriteLine();
+            Log("***************************", ConsoleColor.Yellow);
+            Log("** XEKINA is Starting Up **", ConsoleColor.Yellow);
+            Log("***************************", ConsoleColor.Yellow);
+            string projectName = null;
+            string DeleteOldVSTSProjects = CloudConfigurationManager.GetSetting("DeleteOldVSTSProjects");
+            if (DeleteOldVSTSProjects == "YES")
+            {
+                Log("Looking for previous projects you may wish to delete...", ConsoleColor.Cyan);
+                // Retrieve a list of projects from the account. (and ask if they should be deleted).  This is to tidy up my test data.
+                projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
+                bool none = true;
+                //then - same as above..iterate over the project references(with a hard-coded pagination of the first 10 entries only)
+                foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
+                {
+                    var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
+                    if (teamProject.Description == "This is a dummy project")
+                    {
+                        none = false;
+                        Log(string.Format("Delete project {0}? (Y/N) default=No", teamProject.Name), ConsoleColor.White);
+                        string s = Console.ReadLine();
+
+                        if (s == "Y")
+                        {
+                            Log(string.Format("Project {0} will be deleted!", teamProject.Name), ConsoleColor.Red);
+                            projectHttpClient.QueueDeleteProject(teamProject.Id);
+                            DeleteProjectResourceGroups(teamProject.Name);
+                        }
+                    }
+                }
+                if (none) Log("I didnt find any projects that you might want to delete.");
+
+
+            }
+            Log("Enter your project name");
+            do
+            {
+                projectName = Console.ReadLine();
+            } while (String.IsNullOrEmpty(projectName));
+            Log(string.Format("Your project will be called {0}", projectName));
+           
+            string ShouldCreateVSTSProject = CloudConfigurationManager.GetSetting("CreateVSTSProject");
+            if (ShouldCreateVSTSProject == "YES")
+            {
+                CreateVSTSProject(projectName);
+                string ShouldCreateBuildAndReleaseProcess = CloudConfigurationManager.GetSetting("CreateBuildAndReleaseProcess");
+                if (ShouldCreateBuildAndReleaseProcess == "YES")
+                {
+                    CreateBuildAndReleaseProcess(projectName);
+                }
+             }
+            
+            string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
+            if (ShouldCreateDevTestLab == "YES")
+            {
+                CreateDevTestLab(projectName);
+            }
+
+            string ShouldCreateEnvironments = CloudConfigurationManager.GetSetting("CreateEnvironments");
+            if (ShouldCreateEnvironments == "YES")
+            {
+                Log("Deployment Environment Creation Phase is starting", ConsoleColor.Cyan);
+                CreateEnvironment(projectName, "DEV");
+                CreateEnvironment(projectName, "PROD");
+                Log("End of Deployment Environment Creation Phase.", ConsoleColor.Cyan);
+            }
+            string ShouldCommitSampleProject = CloudConfigurationManager.GetSetting("CommitSampleProject");
+            if (ShouldCommitSampleProject == "YES")
+            {
+                CommitSampleProject(projectName);
+            }
+            Log("***************************", ConsoleColor.Yellow);
+            Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
+            Log("***************************", ConsoleColor.Yellow);
+            return;
+        }
+       
+       
+        
+       
     }
 }
