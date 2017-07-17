@@ -407,41 +407,14 @@ namespace VSTS_Spike
              Log(String.Format("ServiceEndpoint {0} is not ready yet", endpointId));
             return false;
         }
+    
         private static JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string VstsPersonalAccessToken)
         {
-            var responseBody = "";
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                   Convert.ToBase64String(
-                       System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
-
-                var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions?api-version=3.0-preview.1", c_collectionUri_release, projectName));
-                var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
-                // Setup header(s)
-                request.Headers.Add("Accept", "application/json");
-
-                // Add body content
-                request.Content = new StringContent(
-                    releaseDefinition.ToString(),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                // Send the request
-                using (HttpResponseMessage response = client.SendAsync(request).Result)
-                {
-                    responseBody = response.Content.ReadAsStringAsync().Result;
-                    Log(String.Format("Build Process Creation status code was {0}", response.StatusCode));
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        Log(String.Format("Build Process Creation response was {0}", responseBody));
-                        throw new Exception("Error creating release process!");
-                    }
-                }
-                return JObject.Parse(responseBody);
-            }
+            var response = CallRestApi(HttpMethod.Post, projectName, "release/definitions?api-version=3.0-preview.1", true, releaseDefinition.ToString());
+            jsonString = response.ToString();
+            Log(String.Format("Release Definition {0} created successfully", releaseDefinition["name"]), ConsoleColor.Green);
+            return response;
+            
         }
         private static JObject CreateBuildProcess(string projectName, JObject buildDefinition, string VstsPersonalAccessToken)
         {
@@ -561,10 +534,6 @@ namespace VSTS_Spike
             {
                 client.BaseAddress = new Uri("https://api.github.com/");
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
-                //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                //   Convert.ToBase64String(
-                //       System.Text.ASCIIEncoding.ASCII.GetBytes(
-                //           string.Format("{0}:{1}", "token", CloudConfigurationManager.GetSetting("GitHubPersonalAccessToken")))));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                   Convert.ToBase64String(
                       System.Text.ASCIIEncoding.ASCII.GetBytes(
@@ -835,7 +804,7 @@ namespace VSTS_Spike
                 Log(String.Format("Deleting {0}", item.Name));
             }
 
-            DateTime projectStartDate = new DateTime(2017, 07, 01);
+            DateTime projectStartDate = DateTime.Now;
             int discoveryIterationDays = 30;
             int breathingSpaceDays = 3;
             int standardIterationDays = 14;
