@@ -39,7 +39,7 @@ namespace VSTS_Spike
         static string baseProjectName = CloudConfigurationManager.GetSetting("BaseProjectName");
         public static string GitHubPersonalAccessToken { get; set; }
         public static string VstsPersonalAccessToken { get; set; }
-
+        static string jsonString = "";
 
 
         static ProjectHttpClient projectHttpClient = null;
@@ -307,17 +307,21 @@ namespace VSTS_Spike
 
             Log(String.Format("Creating Release Process for project {0}", projectName));
 
-            string endpoints1 = GetServiceEndpoints(projectName);
+            // string endpoints1 = GetServiceEndpoints(projectName);
 
 
             JObject endpoint = CreateServiceEndpoint(projectName);
-            Log("Waiting 20 seconds for service endpoint creation to complete", ConsoleColor.Yellow);
-            for (int i = 0; i < 20; i++)
+            jsonString = endpoint.ToString();
+           
+            int interval = 1;
+            while (!IsServiceEndpointReady(projectName, endpoint["id"].ToString()))
             {
                 Console.Write(".");
-                Thread.Sleep(1000);
+                Thread.Sleep(1000 *interval);
+                interval = interval * 2;
             }
-            Console.WriteLine();
+           
+            
             // This is a constant within the VSTS Account
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
             JObject releaseDefinition = GetReleaseDefinitionTemplate(c_collectionUri, projectName, VstsPersonalAccessToken, releaseTemplateId);
@@ -390,6 +394,18 @@ namespace VSTS_Spike
             var response = CallRestApi(HttpMethod.Get, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1");
             return response.ToString();
 
+        }
+        private static bool IsServiceEndpointReady(string projectName, string endpointId)
+        {
+            string urlFragment = String.Format("distributedtask/serviceendpoints/{0}?api-version=3.0-preview.1", endpointId);
+            var response = CallRestApi(HttpMethod.Get, projectName, urlFragment);
+            if (response["isReady"].ToString() == "True")
+            {
+                Log(String.Format("ServiceEndpoint {0} is ready now.", endpointId), ConsoleColor.Cyan);
+                return true;
+            }
+             Log(String.Format("ServiceEndpoint {0} is not ready yet", endpointId));
+            return false;
         }
         private static JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string VstsPersonalAccessToken)
         {
