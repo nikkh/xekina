@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.Azure.KeyVault;
 
 using Microsoft.VisualStudio.Services.Operations;
 using System.Threading;
@@ -24,7 +25,8 @@ using VSTS_Spike.Models;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
-
+using System.Threading.Tasks;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace VSTS_Spike
 {
@@ -35,7 +37,11 @@ namespace VSTS_Spike
         const string c_projectname = "xekina";
         const string c_reponame = "xekina";
         static string baseProjectName = CloudConfigurationManager.GetSetting("BaseProjectName");
-        
+        public static string GitHubPersonalAccessToken { get; set; }
+        public static string VstsPersonalAccessToken { get; set; }
+
+
+
         static ProjectHttpClient projectHttpClient = null;
 
         #region Utility Methods
@@ -96,7 +102,7 @@ namespace VSTS_Spike
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", CloudConfigurationManager.GetSetting("VstsPersonalAccessToken")))));
+                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/{2}", urlBase, projectName, RestofUrl));
                 var request = new HttpRequestMessage(method, requestUri);
@@ -127,6 +133,19 @@ namespace VSTS_Spike
                 return JObject.Parse(responseBody);
             }
         }
+        public static async Task<string> GetToken(string authority, string resource, string scope)
+        {
+            var authContext = new AuthenticationContext(authority);
+            ClientCredential clientCred = new ClientCredential(CloudConfigurationManager.GetSetting("ClientId"),
+                        CloudConfigurationManager.GetSetting("ClientSecret"));
+            AuthenticationResult result = await authContext.AcquireTokenAsync(resource, clientCred);
+
+            if (result == null)
+                throw new InvalidOperationException("Failed to obtain the JWT token");
+
+            return result.AccessToken;
+        }
+
         #endregion
 
         #region Json Helpers
@@ -256,9 +275,9 @@ namespace VSTS_Spike
             Log("Build and Release Process Creation Phase is starting", ConsoleColor.Cyan);
             Log(String.Format("Creating Build Process for project {0}", projectName));
 
-            var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+            
 
-            JObject buildDefinition = GetBuildDefinitionTemplate(c_collectionUri, projectName, vstsPersonalAccessToken, "ASPNetBuild");
+            JObject buildDefinition = GetBuildDefinitionTemplate(c_collectionUri, projectName, VstsPersonalAccessToken, "ASPNetBuild");
             Log(String.Format("Sucessfully retrived build template for {0}", "ASPNetBuild"));
 
             buildDefinition["name"] = GetBuildNameJson(projectName);
@@ -278,7 +297,7 @@ namespace VSTS_Spike
                 }
             }
 
-            JObject result = CreateBuildProcess(projectName, buildDefinition, vstsPersonalAccessToken);
+            JObject result = CreateBuildProcess(projectName, buildDefinition, VstsPersonalAccessToken);
             string resultString = result.ToString();
             // temporarily log the output to help with the release process request...
             string path = String.Format(@"./Workfiles/BuildProcessDefinition-{0}.json", projectName);
@@ -301,7 +320,7 @@ namespace VSTS_Spike
             Console.WriteLine();
             // This is a constant within the VSTS Account
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
-            JObject releaseDefinition = GetReleaseDefinitionTemplate(c_collectionUri, projectName, vstsPersonalAccessToken, releaseTemplateId);
+            JObject releaseDefinition = GetReleaseDefinitionTemplate(c_collectionUri, projectName, VstsPersonalAccessToken, releaseTemplateId);
             releaseDefinition["name"] = GetReleaseNameJson(projectName);
             releaseDefinition["environments"] = GetReleaseEnvironmentsJson("./JsonSnippets/Release-Environment-eliot.json");
             releaseDefinition["environments"][0] = releaseDefinition["environment"];
@@ -343,7 +362,7 @@ namespace VSTS_Spike
             JArray conditions = new JArray(condition);
             releaseDefinition["environments"][0]["conditions"] = conditions;
             string temp = releaseDefinition.ToString();
-            result = CreateReleaseProcess(projectName, releaseDefinition, vstsPersonalAccessToken);
+            result = CreateReleaseProcess(projectName, releaseDefinition, VstsPersonalAccessToken);
             resultString = result.ToString();
             // temporarily log the output to help with the release process request...
             path = String.Format(@"./Workfiles/ReleaseProcessDefinition-{0}.json", projectName);
@@ -372,7 +391,7 @@ namespace VSTS_Spike
             return response.ToString();
 
         }
-        private static JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string vstsPersonalAccessToken)
+        private static JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string VstsPersonalAccessToken)
         {
             var responseBody = "";
             using (HttpClient client = new HttpClient())
@@ -380,7 +399,7 @@ namespace VSTS_Spike
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions?api-version=3.0-preview.1", c_collectionUri_release, projectName));
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
@@ -408,7 +427,7 @@ namespace VSTS_Spike
                 return JObject.Parse(responseBody);
             }
         }
-        private static JObject CreateBuildProcess(string projectName, JObject buildDefinition, string vstsPersonalAccessToken)
+        private static JObject CreateBuildProcess(string projectName, JObject buildDefinition, string VstsPersonalAccessToken)
         {
             string responseBody = null;
             using (HttpClient client = new HttpClient())
@@ -416,7 +435,7 @@ namespace VSTS_Spike
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions?api-version=2.0", c_collectionUri, projectName));
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
                 // Setup header(s)
@@ -443,7 +462,7 @@ namespace VSTS_Spike
             }
             return JObject.Parse(responseBody);
         }
-        private static JObject GetBuildDefinitionTemplate(string c_collectionUri, string projectName, string vstsPersonalAccessToken, string templateId)
+        private static JObject GetBuildDefinitionTemplate(string c_collectionUri, string projectName, string VstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
             JObject buildDefinitionTemplate = null;
@@ -453,7 +472,7 @@ namespace VSTS_Spike
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions/templates/{2}?api-version=2.0", c_collectionUri, projectName, templateId));
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
@@ -471,7 +490,7 @@ namespace VSTS_Spike
             }
             return new JObject(buildDefinitionTemplate["template"].Children());
         }
-        private static JObject GetReleaseDefinitionTemplate(string c_collectionUri, string projectName, string vstsPersonalAccessToken, string templateId)
+        private static JObject GetReleaseDefinitionTemplate(string c_collectionUri, string projectName, string VstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
             JObject releaseDefinitionTemplate = null;
@@ -481,7 +500,7 @@ namespace VSTS_Spike
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                           string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
 
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions/environmenttemplates?templateId={2}&api-version=3.0-preview.1", c_collectionUri_release, projectName, templateId));
@@ -526,10 +545,14 @@ namespace VSTS_Spike
             {
                 client.BaseAddress = new Uri("https://api.github.com/");
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+                //client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                //   Convert.ToBase64String(
+                //       System.Text.ASCIIEncoding.ASCII.GetBytes(
+                //           string.Format("{0}:{1}", "token", CloudConfigurationManager.GetSetting("GitHubPersonalAccessToken")))));
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-                   Convert.ToBase64String(
-                       System.Text.ASCIIEncoding.ASCII.GetBytes(
-                           string.Format("{0}:{1}", "token", CloudConfigurationManager.GetSetting("GitHubPersonalAccessToken")))));
+                  Convert.ToBase64String(
+                      System.Text.ASCIIEncoding.ASCII.GetBytes(
+                          string.Format("{0}:{1}", "token", Program.GitHubPersonalAccessToken))));
                 client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("Mozilla", "5.0"));
                 var requestUri = url; ;
                 var request = new HttpRequestMessage(method, requestUri);
@@ -958,7 +981,7 @@ namespace VSTS_Spike
         {
             try
             {
-                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+               
                 string responseBody = null;
                 using (HttpClient client = new HttpClient())
                 {
@@ -968,7 +991,7 @@ namespace VSTS_Spike
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                         Convert.ToBase64String(
                             System.Text.ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                                string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                     using (HttpResponseMessage response = client.GetAsync(
                                 "https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/nige/_apis/release/definitions/1?$expand=artifacts,environments,triggers&api-version=3.0-preview.1").Result)
@@ -993,7 +1016,7 @@ namespace VSTS_Spike
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                        Convert.ToBase64String(
                            System.Text.ASCIIEncoding.ASCII.GetBytes(
-                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                               string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                     var requestUri = new Uri("https://nicks-ms-subscription.vsrm.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
                     var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
@@ -1025,7 +1048,7 @@ namespace VSTS_Spike
         {
             try
             {
-                var vstsPersonalAccessToken = CloudConfigurationManager.GetSetting("VstsPersonalAccessToken");
+              
                 string responseBody = null;
                 using (HttpClient client = new HttpClient())
                 {
@@ -1035,7 +1058,7 @@ namespace VSTS_Spike
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                         Convert.ToBase64String(
                             System.Text.ASCIIEncoding.ASCII.GetBytes(
-                                string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                                string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                     using (HttpResponseMessage response = client.GetAsync(
                                 "https://nicks-ms-subscription.visualstudio.com/DefaultCollection/murhin/_apis/build/definitions/99?api-version=2.0").Result)
@@ -1060,7 +1083,7 @@ namespace VSTS_Spike
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
                        Convert.ToBase64String(
                            System.Text.ASCIIEncoding.ASCII.GetBytes(
-                               string.Format("{0}:{1}", "", vstsPersonalAccessToken))));
+                               string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
                     var requestUri = new Uri("https://nicks-ms-subscription.visualstudio.com/defaultcollection/xekina/_apis/release/definitions?api-version=3.0-preview.1");
                     var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
@@ -1092,9 +1115,13 @@ namespace VSTS_Spike
 
         static void Main(string[] args)
         {
+            var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetToken));
+            Program.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
+            Program.VstsPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
+
             //BuildSpike();
             //return;
-            
+
             //ReleaseSpike();
             //return;
             Console.WriteLine();
