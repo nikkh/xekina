@@ -10,7 +10,6 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi.Types;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.Azure.KeyVault;
-
 using Microsoft.VisualStudio.Services.Operations;
 using System.Threading;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
@@ -27,6 +26,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents;
+using Xekina.Models;
 
 namespace VSTS_Spike
 {
@@ -39,8 +41,14 @@ namespace VSTS_Spike
         static string baseProjectName = CloudConfigurationManager.GetSetting("BaseProjectName");
         public static string GitHubPersonalAccessToken { get; set; }
         public static string VstsPersonalAccessToken { get; set; }
-        static string jsonString = "";
+        static string CosmosAuthorizationKey { get; set; }
 
+
+        static string jsonString = "";
+        static DocumentClient client;
+        static string cosmosEndpointUrl = CloudConfigurationManager.GetSetting("cosmosEndPointUrl");
+        static string cosmosDatabaseId = CloudConfigurationManager.GetSetting("cosmosDatabaseId");
+        static string cosmosCollectionId = CloudConfigurationManager.GetSetting("cosmosCollectionId");
 
         static ProjectHttpClient projectHttpClient = null;
 
@@ -1096,13 +1104,121 @@ namespace VSTS_Spike
                 Console.WriteLine(ex.ToString());
             }
         }
-        #endregion
 
-        static void Main(string[] args)
+        private static async Task<string> DocDBSpike()
+        {
+           
+            
+            ConnectionPolicy connectionPolicy = new ConnectionPolicy { UserAgentSuffix = " samples-net/3" };
+
+            try
+            {
+                //Get a single instance of Document client and reuse this for all the samples
+                //This is the recommended approach for DocumentClient as opposed to new'ing up new instances each time
+                using (client = new DocumentClient(new Uri(cosmosEndpointUrl), CosmosAuthorizationKey))
+                {
+                    //ensure the database & collection exist before running samples
+                    Init();
+                    var collectionLink = UriFactory.CreateDocumentCollectionUri(cosmosDatabaseId, cosmosCollectionId);
+                    XekinaTemplate x = new XekinaTemplate();
+                    x.ProjectName = "glarbo";
+                    x.ProjectStrapline = "This is project glarbo";
+                    x.TemplateName = "VSTS only";
+                    x.CommitSampleProject = true;
+                    SampleSolution s = new SampleSolution();
+                    s.SolutionName = "XekinaSample.sln";
+                    x.SampleSolution = s;
+                    Document created = client.CreateDocumentAsync(collectionLink, x).Result;
+
+
+                    var docs = await client.ReadDocumentFeedAsync(collectionLink, new FeedOptions { MaxItemCount = 10 });
+                    foreach (var d in docs)
+                    {
+                        Console.WriteLine(d);
+                    }
+
+                    var response = client.ReadDocumentAsync(UriFactory.CreateDocumentUri(cosmosDatabaseId, cosmosCollectionId, created.Id)).Result;
+                    Console.WriteLine("Document read by Id {0}", response.Resource);
+                    Console.WriteLine("RU Charge for reading a Document by Id {0}", response.RequestCharge);
+                    XekinaTemplate readXekina = (XekinaTemplate)(dynamic)response.Resource;
+                    Console.WriteLine("Sample Solution = " + readXekina.SampleSolution.SolutionName);
+                    Console.WriteLine("");
+                    //Clean-up environment
+                    // Cleanup();
+                }
+            }
+            catch (DocumentClientException de)
+            {
+                Exception baseException = de.GetBaseException();
+                Console.WriteLine("{0} error occurred: {1}, Message: {2}", de.StatusCode, de.Message, baseException.Message);
+            }
+            catch (Exception e)
+            {
+                Exception baseException = e.GetBaseException();
+                Console.WriteLine("Error: {0}, Message: {1}", e.Message, baseException.Message);
+            }
+            finally
+            {
+                Console.WriteLine("\nEnd of demo, press any key to exit.");
+                Console.ReadKey();
+            }
+
+
+            return null;
+        }
+        private static void Cleanup()
+        {
+            client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(cosmosDatabaseId)).Wait();
+        }
+
+        private static void Init()
+        {
+            GetOrCreateDatabaseAsync(cosmosDatabaseId).Wait();
+            GetOrCreateCollectionAsync(cosmosDatabaseId, cosmosCollectionId).Wait();
+        }
+
+        private static async Task<DocumentCollection> GetOrCreateCollectionAsync(string cosmosDatabaseId, string cosmosCollectionId)
+        {
+            var databaseUri = UriFactory.CreateDatabaseUri(cosmosDatabaseId);
+            DocumentCollection collection = client.CreateDocumentCollectionQuery(databaseUri)
+                .Where(c => c.Id == cosmosCollectionId)
+                .AsEnumerable()
+                .FirstOrDefault();
+
+            if (collection == null)
+            {
+                collection = await client.CreateDocumentCollectionAsync(databaseUri, new DocumentCollection { Id = cosmosCollectionId });
+            }
+            return collection;
+        }
+
+        private static async Task<Database> GetOrCreateDatabaseAsync(string cosmosCollectionId)
+        {
+            var databaseUri = UriFactory.CreateDatabaseUri(cosmosCollectionId);
+            Database database = client.CreateDatabaseQuery()
+                .Where(db => db.Id == cosmosCollectionId)
+                .ToArray()
+                .FirstOrDefault();
+
+            if (database == null)
+            {
+                database = await client.CreateDatabaseAsync(new Database { Id = cosmosCollectionId });
+            }
+            return database;
+        }
+    
+    #endregion
+
+    static void Main(string[] args)
         {
             var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetToken));
             Program.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
             Program.VstsPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
+            Program.CosmosAuthorizationKey = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("XekinaCosmosAuthorizationKeyVaultUri")).Result.Value;
+
+
+            var test = DocDBSpike().Result;
+            return;
 
             //BuildSpike();
             //return;
@@ -1185,9 +1301,7 @@ namespace VSTS_Spike
             Log("***************************", ConsoleColor.Yellow);
             return;
         }
-       
-       
-        
-       
+
+    
     }
 }
