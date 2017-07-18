@@ -34,17 +34,15 @@ namespace VSTS_Spike
 {
     class Program
     {
-        const string c_collectionUri = "https://nicks-ms-subscription.visualstudio.com/DefaultCollection";
-        const string c_collectionUri_release = "https://nicks-ms-subscription.vsrm.visualstudio.com/DefaultCollection";
-        const string c_projectname = "xekina";
-        const string c_reponame = "xekina";
         static string baseProjectName = CloudConfigurationManager.GetSetting("BaseProjectName");
         public static string GitHubPersonalAccessToken { get; set; }
         public static string VstsPersonalAccessToken { get; set; }
         static string CosmosAuthorizationKey { get; set; }
 
-
         static string jsonString = "";
+        static string UrlBase = CloudConfigurationManager.GetSetting("UrlBase");
+        static string UrlBaseRelease = CloudConfigurationManager.GetSetting("UrlBaseRelease");
+
         static DocumentClient client;
         static string cosmosEndpointUrl = CloudConfigurationManager.GetSetting("cosmosEndPointUrl");
         static string cosmosDatabaseId = CloudConfigurationManager.GetSetting("cosmosDatabaseId");
@@ -57,7 +55,7 @@ namespace VSTS_Spike
         {
             VssCredentials creds = new VssClientCredentials();
             creds.Storage = new VssClientCredentialStorage();
-            return new VssConnection(new Uri(c_collectionUri), creds);
+            return new VssConnection(new Uri(UrlBase), creds);
         }
         private static void WriteRestResponseToFile(string rest, string fileName)
         {
@@ -285,7 +283,7 @@ namespace VSTS_Spike
 
             
 
-            JObject buildDefinition = GetBuildDefinitionTemplate(c_collectionUri, projectName, VstsPersonalAccessToken, "ASPNetBuild");
+            JObject buildDefinition = GetBuildDefinitionTemplate(UrlBase, projectName, VstsPersonalAccessToken, "ASPNetBuild");
             Log(String.Format("Sucessfully retrived build template for {0}", "ASPNetBuild"));
 
             buildDefinition["name"] = GetBuildNameJson(projectName);
@@ -332,7 +330,7 @@ namespace VSTS_Spike
             
             // This is a constant within the VSTS Account
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
-            JObject releaseDefinition = GetReleaseDefinitionTemplate(c_collectionUri, projectName, VstsPersonalAccessToken, releaseTemplateId);
+            JObject releaseDefinition = GetReleaseDefinitionTemplate(UrlBase, projectName, VstsPersonalAccessToken, releaseTemplateId);
             releaseDefinition["name"] = GetReleaseNameJson(projectName);
             releaseDefinition["environments"] = GetReleaseEnvironmentsJson("./JsonSnippets/Release-Environment-eliot.json");
             releaseDefinition["environments"][0] = releaseDefinition["environment"];
@@ -433,7 +431,7 @@ namespace VSTS_Spike
                    Convert.ToBase64String(
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
                            string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
-                var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions?api-version=2.0", c_collectionUri, projectName));
+                var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions?api-version=2.0", UrlBase, projectName));
                 var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
                 // Setup header(s)
                 request.Headers.Add("Accept", "application/json");
@@ -459,7 +457,7 @@ namespace VSTS_Spike
             }
             return JObject.Parse(responseBody);
         }
-        private static JObject GetBuildDefinitionTemplate(string c_collectionUri, string projectName, string VstsPersonalAccessToken, string templateId)
+        private static JObject GetBuildDefinitionTemplate(string UrlBase, string projectName, string VstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
             JObject buildDefinitionTemplate = null;
@@ -471,7 +469,7 @@ namespace VSTS_Spike
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
                            string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
-                var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions/templates/{2}?api-version=2.0", c_collectionUri, projectName, templateId));
+                var requestUri = new Uri(string.Format("{0}/{1}/_apis/build/definitions/templates/{2}?api-version=2.0", UrlBase, projectName, templateId));
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
                 // Setup header(s)
                 request.Headers.Add("Accept", "application/json");
@@ -487,7 +485,7 @@ namespace VSTS_Spike
             }
             return new JObject(buildDefinitionTemplate["template"].Children());
         }
-        private static JObject GetReleaseDefinitionTemplate(string c_collectionUri, string projectName, string VstsPersonalAccessToken, string templateId)
+        private static JObject GetReleaseDefinitionTemplate(string UrlBase, string projectName, string VstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
             JObject releaseDefinitionTemplate = null;
@@ -500,7 +498,7 @@ namespace VSTS_Spike
                            string.Format("{0}:{1}", "", VstsPersonalAccessToken))));
 
 
-                var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions/environmenttemplates?templateId={2}&api-version=3.0-preview.1", c_collectionUri_release, projectName, templateId));
+                var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions/environmenttemplates?templateId={2}&api-version=3.0-preview.1", UrlBaseRelease, projectName, templateId));
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
                 // Setup header(s)
                 request.Headers.Add("Accept", "application/json");
