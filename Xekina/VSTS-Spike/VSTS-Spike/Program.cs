@@ -1217,8 +1217,8 @@ namespace VSTS_Spike
             Program.CosmosAuthorizationKey = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("XekinaCosmosAuthorizationKeyVaultUri")).Result.Value;
 
 
-            var test = DocDBSpike().Result;
-            return;
+            //var test = DocDBSpike().Result;
+            //return;
 
             //BuildSpike();
             //return;
