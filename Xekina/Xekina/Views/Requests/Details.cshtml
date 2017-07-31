@@ -1,0 +1,74 @@
+﻿@model Xekina.Models.Request
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>Request</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.ProjectName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ProjectName)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ProjectDescription)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ProjectDescription)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SubscriptionId)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SubscriptionId)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ResourceGroupLocation)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ResourceGroupLocation)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DateRequested)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DateRequested)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.RequestedBy)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.RequestedBy)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Status)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.ID }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>

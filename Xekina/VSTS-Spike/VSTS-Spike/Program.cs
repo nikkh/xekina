@@ -1275,12 +1275,6 @@ namespace VSTS_Spike
                 }
              }
             
-            string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
-            if (ShouldCreateDevTestLab == "YES")
-            {
-                CreateDevTestLab(projectName);
-            }
-
             string ShouldCreateEnvironments = CloudConfigurationManager.GetSetting("CreateEnvironments");
             if (ShouldCreateEnvironments == "YES")
             {
@@ -1289,11 +1283,19 @@ namespace VSTS_Spike
                 CreateEnvironment(projectName, "PROD");
                 Log("End of Deployment Environment Creation Phase.", ConsoleColor.Cyan);
             }
+
             string ShouldCommitSampleProject = CloudConfigurationManager.GetSetting("CommitSampleProject");
             if (ShouldCommitSampleProject == "YES")
             {
                 CommitSampleProject(projectName);
             }
+
+            string ShouldCreateDevTestLab = CloudConfigurationManager.GetSetting("CreateDevTestLab");
+            if (ShouldCreateDevTestLab == "YES")
+            {
+                CreateDevTestLab(projectName);
+            }
+
             Log("***************************", ConsoleColor.Yellow);
             Log("** XEKINA COMPLETED      **", ConsoleColor.Yellow);
             Log("***************************", ConsoleColor.Yellow);
