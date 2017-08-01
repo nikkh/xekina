@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using Xekina.Authentication;
+using Xekina.Models;
 
 namespace Xekina.Controllers
 {
@@ -19,10 +20,8 @@ namespace Xekina.Controllers
 
         public async Task<ActionResult> MySubscriptions()
         {
-            TokenHelper tokenHelper = new TokenHelper();
-            var token = await tokenHelper.GetTokenForCurrentUser();
-            var subscriptions = await Helpers.GetSubscriptionsForUser(token);
-            return View();
+            var result = await Helpers.GetSubscriptionsForUser(await TokenHelper.GetTokenForCurrentUser());
+            return View(result);
         }
 
        

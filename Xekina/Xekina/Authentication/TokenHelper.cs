@@ -11,7 +11,7 @@ using Xekina.Models;
 
 namespace Xekina.Authentication
 {
-    public class TokenHelper
+    public static class TokenHelper
     {
         public static async Task<string> GetTokenForCurrentApplication(string authority, string resource, string scope)
         {
@@ -25,7 +25,7 @@ namespace Xekina.Authentication
 
             return result.AccessToken;
         }
-        public async Task<string> GetTokenForCurrentUser()
+        public static async Task<string> GetTokenForCurrentUser()
         {
             string clientId = CloudConfigurationManager.GetSetting("ida:ClientId");
             string clientSecret = CloudConfigurationManager.GetSetting("ida:ClientSecret");

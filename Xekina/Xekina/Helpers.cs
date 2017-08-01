@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using Xekina.Authentication;
+using Xekina.Models;
 
 namespace Xekina
 {
@@ -22,19 +23,24 @@ namespace Xekina
         }
    
 
-    public static async Task<List<string>> GetSubscriptionsForUser(string token)
+    public static async Task<List<UserSubscription>> GetSubscriptionsForUser(string token)
     {
             var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(TokenHelper.GetTokenForCurrentApplication));
             var test = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("XekinaTestSecretKvUri")).Result.Value;
-            List<string> subscriptions = new List<string>();
+           
+            List<UserSubscription> userSubscriptions = new List<UserSubscription>();
             var url = "https://management.azure.com/subscriptions?api-version=2016-06-01";
             var j = await RestApi.Invoke(HttpMethod.Get, url, token);
             var jj = j.ToString();
             foreach (var item in j["value"])
             {
-                subscriptions.Add(item["subscriptionId"].ToString());
+                UserSubscription s = new UserSubscription();
+                s.SubscriptionId = item["subscriptionId"].ToString();
+                s.SubscriptionName = item["displayName"].ToString();
+                s.State = item["state"].ToString();
+                userSubscriptions.Add(s);
             }
-            return subscriptions;
+            return userSubscriptions;
     }
     }
 }
