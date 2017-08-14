@@ -24,7 +24,7 @@ namespace Xekina
                       "~/Scripts/respond.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/journal.css",
+                      "~/Content/superhero.css",
                       "~/Content/site.css"));
         }
     }

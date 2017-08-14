@@ -224,6 +224,8 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\journal.css" />
     <Content Include="Content\journal.min.css" />
+    <Content Include="Content\superhero.css" />
+    <Content Include="Content\superhero.min.css" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
