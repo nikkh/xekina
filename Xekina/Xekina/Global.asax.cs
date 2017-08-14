@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity.Migrations;
 using System.IdentityModel.Claims;
 using System.Linq;
 using System.Web;
@@ -19,6 +20,9 @@ namespace Xekina
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             AntiForgeryConfig.UniqueClaimTypeIdentifier = ClaimTypes.NameIdentifier;
+            var configuration = new Xekina.Migrations.Configuration();
+            var migrator = new DbMigrator(configuration);
+            migrator.Update();
         }
     }
 }
