@@ -32,7 +32,7 @@ namespace Xekina
                     ClientId = clientId,
                     Authority = authority,
                     PostLogoutRedirectUri = postLogoutRedirectUri,
-                    RedirectUri = redirectUri
+                    RedirectUri = redirectUri 
 
                 });
         }
