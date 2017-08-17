@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using StackExchange.Redis;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -11,16 +13,17 @@ using Xekina.Models;
 namespace Xekina.Controllers
 {
     [Authorize]
-    public class HomeController : Controller
+    public class HomeController : XekinaBaseController
     {
         public ActionResult Index()
         {
+            
             return View();
         }
 
         public async Task<ActionResult> MySubscriptions()
         {
-            var result = await Helpers.GetSubscriptionsForUser(await TokenHelper.GetTokenForCurrentUser());
+            var result = await new Helpers().GetSubscriptionsForUser();
             return View(result);
         }
 

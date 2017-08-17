@@ -21,5 +21,7 @@ namespace Xekina.DataAccess
 
         
         public System.Data.Entity.DbSet<Xekina.Models.Request> Requests { get; set; }
+
+        public System.Data.Entity.DbSet<Xekina.Models.UserDefaults> UserDefaults { get; set; }
     }
 }

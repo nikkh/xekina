@@ -7,17 +7,18 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Xekina.Authentication;
 
 namespace Xekina
 
 {
     public static class RestApi
     {
-        public static async Task<JObject> Invoke(HttpMethod method, string restfulUrl, string token, string body = null)
+        public static async Task<JObject> Invoke(HttpMethod method, string restfulUrl,  string body = null)
         {
 
             string responseBody = "";
-
+            string token = await TokenHelper.GetTokenForCurrentUser();
 
             if ((method == HttpMethod.Post) && (body == null)) throw new Exception("RestApi.Invoke - body cannot be null for post operations");
             if ((method == HttpMethod.Put) && (body == null)) throw new Exception("RestApi.Invoke - body cannot be null for put operations");
