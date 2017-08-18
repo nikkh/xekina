@@ -40,6 +40,7 @@ namespace Xekina.Controllers
                 };
             }
             UserDefaultsViewModel vm = new UserDefaultsViewModel();
+            vm.UserId = User.Identity.Name;
             vm.CommitSampleProject = userDefaults.CommitSampleProject;
             vm.CreateBuildAndReleaseProcess = userDefaults.CreateBuildAndReleaseProcess;
             vm.CreateDevTestLab = userDefaults.CreateDevTestLab;
