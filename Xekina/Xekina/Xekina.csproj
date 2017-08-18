@@ -220,6 +220,10 @@
     <Compile Include="Migrations\201708161616276_extendUserDefaults1.Designer.cs">
       <DependentUpon>201708161616276_extendUserDefaults1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201708181618525_githubpatinuserdefaults.cs" />
+    <Compile Include="Migrations\201708181618525_githubpatinuserdefaults.Designer.cs">
+      <DependentUpon>201708181618525_githubpatinuserdefaults.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AdalTokenCache.cs" />
     <Compile Include="Models\ApplicationDBContext.cs" />
@@ -308,6 +312,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201708161616276_extendUserDefaults1.resx">
       <DependentUpon>201708161616276_extendUserDefaults1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708181618525_githubpatinuserdefaults.resx">
+      <DependentUpon>201708181618525_githubpatinuserdefaults.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

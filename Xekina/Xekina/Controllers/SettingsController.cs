@@ -50,7 +50,7 @@ namespace Xekina.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation")] UserDefaultsViewModel vm)
+        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation,GitHubPersonalAccessToken")] UserDefaultsViewModel vm)
         {
             if (ModelState.IsValid)
             {
@@ -63,6 +63,7 @@ namespace Xekina.Controllers
                     u.CreateEnvironments = vm.CreateEnvironments;
                     u.CreateVSTSProject = vm.CreateVSTSProject;
                     u.ResourceGroupLocation = vm.ResourceGroupLocation;
+                    u.GitHubPersonalAccessToken = vm.GitHubPersonalAccessToken;
                    
                 }
                 else

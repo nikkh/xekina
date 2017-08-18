@@ -24,6 +24,7 @@ namespace Xekina.Models
         public string ArtifactRepoUri { get; set; }
         public string ArtifactRepoFolder { get; set; }
         public string ArtifactRepoBranch { get; set; }
+        public string GitHubPersonalAccessToken { get; set; }
 
         public static explicit operator UserDefaultsViewModel(UserDefaults ud)
         {
@@ -39,7 +40,8 @@ namespace Xekina.Models
                 ResourceGroupLocationSelectList = new List<System.Web.Mvc.SelectListItem>(),
                 ArtifactRepoBranch = ud.ArtifactRepoBranch,
                 ArtifactRepoFolder = ud.ArtifactRepoFolder,
-                ArtifactRepoUri = ud.ArtifactRepoUri
+                ArtifactRepoUri = ud.ArtifactRepoUri,
+                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken
             };
         }
     }
