@@ -25,28 +25,17 @@ namespace Xekina.Controllers
         // GET: Settings/Edit/5
         public async Task<ActionResult> EditDefaults()
         {
-          
+            UserDefaultsViewModel vm = null;
             UserDefaults userDefaults = await db.UserDefaults.FindAsync(User.Identity.Name);
             if (userDefaults == null)
             {
-                userDefaults = new UserDefaults
-                {
-                    UserId = User.Identity.Name,
-                    CreateVSTSProject = true,
-                    CreateBuildAndReleaseProcess = true,
-                    CommitSampleProject = true,
-                    CreateDevTestLab = true,
-                    CreateEnvironments =true
-                };
+                vm = new UserDefaultsViewModel(User.Identity.Name);
             }
-            UserDefaultsViewModel vm = new UserDefaultsViewModel();
-            vm.UserId = User.Identity.Name;
-            vm.CommitSampleProject = userDefaults.CommitSampleProject;
-            vm.CreateBuildAndReleaseProcess = userDefaults.CreateBuildAndReleaseProcess;
-            vm.CreateDevTestLab = userDefaults.CreateDevTestLab;
-            vm.CreateEnvironments = userDefaults.CreateEnvironments;
-            vm.CreateVSTSProject = userDefaults.CreateVSTSProject;
-            vm.ResourceGroupLocation = userDefaults.ResourceGroupLocation;
+            else
+            {
+                vm = (UserDefaultsViewModel)userDefaults;
+            }
+            
             vm.ResourceGroupLocationSelectList = new List<SelectListItem>();
             Dictionary<String, String> locations = await new Helpers().GetResourceLocationsForUserSubscriptions();
             foreach (var location in locations)
@@ -61,29 +50,29 @@ namespace Xekina.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation")] UserDefaults userDefaults)
+        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation")] UserDefaultsViewModel vm)
         {
             if (ModelState.IsValid)
             {
                 UserDefaults u = db.UserDefaults.Find(User.Identity.Name);
                 if (u != null)
                 {
-                    u.CommitSampleProject = userDefaults.CommitSampleProject;
-                    u.CreateBuildAndReleaseProcess = userDefaults.CreateBuildAndReleaseProcess;
-                    u.CreateDevTestLab = userDefaults.CreateDevTestLab;
-                    u.CreateEnvironments = userDefaults.CreateEnvironments;
-                    u.CreateVSTSProject = userDefaults.CreateVSTSProject;
-                    u.ResourceGroupLocation = userDefaults.ResourceGroupLocation;
+                    u.CommitSampleProject = vm.CommitSampleProject;
+                    u.CreateBuildAndReleaseProcess = vm.CreateBuildAndReleaseProcess;
+                    u.CreateDevTestLab = vm.CreateDevTestLab;
+                    u.CreateEnvironments = vm.CreateEnvironments;
+                    u.CreateVSTSProject = vm.CreateVSTSProject;
+                    u.ResourceGroupLocation = vm.ResourceGroupLocation;
                    
                 }
                 else
                 {
-                    db.UserDefaults.Add(userDefaults);
+                    db.UserDefaults.Add((UserDefaults) vm);
                 }
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index", "Home");
             }
-            return View(userDefaults);
+            return View(vm);
         }
 
         // GET: Settings/Delete/5

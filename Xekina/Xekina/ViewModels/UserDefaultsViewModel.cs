@@ -10,6 +10,16 @@ namespace Xekina.ViewModels
 {
     public class UserDefaultsViewModel 
     {
+        public UserDefaultsViewModel(string user)
+        {
+            UserId = user;
+            CreateVSTSProject = true;
+            CreateBuildAndReleaseProcess = true;
+            CommitSampleProject = true;
+            CreateDevTestLab = true;
+            CreateEnvironments = true;
+        }
+        public UserDefaultsViewModel() { }
         public string UserId { get; set; }
         [Display(Name = "Create VSTS project", Description = "Should xekina create a VSTS project for this request?")]
         public bool CreateVSTSProject { get; set; }
@@ -22,5 +32,22 @@ namespace Xekina.ViewModels
         public string ArtifactRepoFolder { get; set; }
         public string ArtifactRepoBranch { get; set; }
         public List<SelectListItem> ResourceGroupLocationSelectList { get; set; }
+
+        public static explicit operator UserDefaults(UserDefaultsViewModel ud)
+        {
+            return new UserDefaults
+            {
+                CommitSampleProject = ud.CommitSampleProject,
+                CreateBuildAndReleaseProcess = ud.CreateBuildAndReleaseProcess,
+                CreateDevTestLab = ud.CreateDevTestLab,
+                CreateVSTSProject = ud.CreateVSTSProject,
+                CreateEnvironments = ud.CreateEnvironments,
+                ResourceGroupLocation = ud.ResourceGroupLocation,
+                UserId = ud.UserId,
+                ArtifactRepoBranch = ud.ArtifactRepoBranch,
+                ArtifactRepoFolder = ud.ArtifactRepoFolder,
+                ArtifactRepoUri = ud.ArtifactRepoUri
+            };
+        }
     }
 }

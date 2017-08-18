@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
+using Xekina.ViewModels;
 
 namespace Xekina.Models
 {
@@ -23,6 +24,24 @@ namespace Xekina.Models
         public string ArtifactRepoUri { get; set; }
         public string ArtifactRepoFolder { get; set; }
         public string ArtifactRepoBranch { get; set; }
+
+        public static explicit operator UserDefaultsViewModel(UserDefaults ud)
+        {
+            return new UserDefaultsViewModel
+            {
+                CommitSampleProject = ud.CommitSampleProject,
+                CreateBuildAndReleaseProcess = ud.CreateBuildAndReleaseProcess,
+                CreateDevTestLab = ud.CreateDevTestLab,
+                CreateVSTSProject = ud.CreateVSTSProject,
+                CreateEnvironments = ud.CreateEnvironments,
+                ResourceGroupLocation = ud.ResourceGroupLocation,
+                UserId = ud.UserId,
+                ResourceGroupLocationSelectList = new List<System.Web.Mvc.SelectListItem>(),
+                ArtifactRepoBranch = ud.ArtifactRepoBranch,
+                ArtifactRepoFolder = ud.ArtifactRepoFolder,
+                ArtifactRepoUri = ud.ArtifactRepoUri
+            };
+        }
     }
     
 }
