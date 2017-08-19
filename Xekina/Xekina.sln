@@ -5,6 +5,7 @@ VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{30022922-1437-4F46-852C-9741375ACC6C}"
 	ProjectSection(SolutionItems) = preProject
+		..\..\..\..\Dropbox\Settings Files\xekina.engine.settings.config = ..\..\..\..\Dropbox\Settings Files\xekina.engine.settings.config
 		..\..\..\..\Dropbox\Settings Files\xekina.web.settings.config = ..\..\..\..\Dropbox\Settings Files\xekina.web.settings.config
 	EndProjectSection
 EndProject
