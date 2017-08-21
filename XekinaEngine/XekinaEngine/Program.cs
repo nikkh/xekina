@@ -29,6 +29,7 @@ namespace XekinaEngine
         // AzureWebJobsDashboard and AzureWebJobsStorage
         static void Main()
         {
+            Console.WriteLine("Does this appear on the dashboard?");
             var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetTokenForCurrentApplication));
             string queueConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
             string dashboardConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("AzureWebJobsDashboardConnectionStringKvUri")).Result.Value;
