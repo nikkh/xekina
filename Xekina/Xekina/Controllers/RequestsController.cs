@@ -43,7 +43,7 @@ namespace Xekina.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "ID,ProjectName,ProjectDescription,SubscriptionId,ResourceGroupLocation,DateRequested,RequestedBy,Status")] Request request)
+        public async Task<ActionResult> Create([Bind(Include = "ProjectName,ProjectDescription,SubscriptionId,ResourceGroupLocation,DateRequested,RequestedBy,Status")] Request request)
         {
             if (ModelState.IsValid)
             {
@@ -75,7 +75,7 @@ namespace Xekina.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "ID,ProjectName,ProjectDescription,SubscriptionId,ResourceGroupLocation,DateRequested,RequestedBy,Status")] Request request)
+        public async Task<ActionResult> Edit([Bind(Include = "RequestID,ProjectName,ProjectDescription,SubscriptionId,ResourceGroupLocation,DateRequested,RequestedBy,Status")] Request request)
         {
             if (ModelState.IsValid)
             {

@@ -59,8 +59,13 @@
     <Compile Include="Migrations\201708181618525_githubpatinuserdefaults.Designer.cs">
       <DependentUpon>201708181618525_githubpatinuserdefaults.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\201708221124264_requestlog1.cs" />
+    <Compile Include="Migrations\201708221124264_requestlog1.Designer.cs">
+      <DependentUpon>201708221124264_requestlog1.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Request.cs" />
+    <Compile Include="Models\RequestLog.cs" />
     <Compile Include="Models\UserDefaults.cs" />
     <Compile Include="Models\UserSubscription.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -79,6 +84,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201708181618525_githubpatinuserdefaults.resx">
       <DependentUpon>201708181618525_githubpatinuserdefaults.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708221124264_requestlog1.resx">
+      <DependentUpon>201708221124264_requestlog1.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

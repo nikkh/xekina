@@ -7,7 +7,7 @@ namespace Xekina.Data.Models
 {
     public class Request
     {
-        public int ID { get; set; }
+        public int RequestID { get; set; }
         public string ProjectName { get; set; }
         public string ProjectDescription { get; set; }
         public string SubscriptionId { get; set; }

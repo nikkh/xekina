@@ -21,8 +21,9 @@ namespace Xekina.Data
         }
 
         
-        public System.Data.Entity.DbSet<Request> Requests { get; set; }
+        public DbSet<Request> Requests { get; set; }
+        public DbSet<RequestLog> RequestLogs { get; set; }
 
-        public System.Data.Entity.DbSet<UserDefaults> UserDefaults { get; set; }
+        public DbSet<UserDefaults> UserDefaults { get; set; }
     }
 }
