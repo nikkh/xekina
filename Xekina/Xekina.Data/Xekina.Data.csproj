@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Messages\RequestMessage.cs" />
     <Compile Include="Migrations\201707311824541_initial.cs" />
     <Compile Include="Migrations\201707311824541_initial.Designer.cs">
       <DependentUpon>201707311824541_initial.cs</DependentUpon>
@@ -62,6 +63,10 @@
     <Compile Include="Migrations\201708221124264_requestlog1.cs" />
     <Compile Include="Migrations\201708221124264_requestlog1.Designer.cs">
       <DependentUpon>201708221124264_requestlog1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\201708221527329_requestlogone2many.cs" />
+    <Compile Include="Migrations\201708221527329_requestlogone2many.Designer.cs">
+      <DependentUpon>201708221527329_requestlogone2many.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Request.cs" />
@@ -87,6 +92,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\201708221124264_requestlog1.resx">
       <DependentUpon>201708221124264_requestlog1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\201708221527329_requestlogone2many.resx">
+      <DependentUpon>201708221527329_requestlogone2many.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

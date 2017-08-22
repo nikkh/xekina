@@ -29,7 +29,20 @@ namespace XekinaEngine
         // AzureWebJobsDashboard and AzureWebJobsStorage
         static void Main()
         {
-            Console.WriteLine("Does this appear on the dashboard?");
+            
+            if (Convert.ToBoolean(CloudConfigurationManager.GetSetting("UseLocalDB")))
+            {
+                string dataDirectory = CloudConfigurationManager.GetSetting("DataDirectory");
+                if (String.IsNullOrEmpty(dataDirectory))
+                {
+                    throw new Exception("Configuration requires use of LocalDB, but data directory is not set in configuration");
+                }
+                Console.WriteLine("Running locally. Data diectory will be set to " + dataDirectory);
+                AppDomain.CurrentDomain.SetData("DataDirectory", dataDirectory);
+            }
+            
+            
+           
             var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetTokenForCurrentApplication));
             string queueConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
             string dashboardConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("AzureWebJobsDashboardConnectionStringKvUri")).Result.Value;

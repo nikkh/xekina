@@ -17,6 +17,7 @@ namespace Xekina.Data.Models
         public string RequestedBy { get; set; }
 
         public RequestStatus Status { get; set; }
+        public virtual ICollection<RequestLog> RequestLogs { get; set; }
 
     }
 

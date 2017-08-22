@@ -2,9 +2,13 @@
 using Microsoft.Azure.KeyVault;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
+using Newtonsoft.Json;
+using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Xekina.Authentication;
+using Xekina.Data.Messages;
+using Xekina.Data.Models;
 
 namespace Xekina.Controllers
 {
@@ -29,8 +33,17 @@ namespace Xekina.Controllers
             // Create the queue if it doesn't already exist.
             queue.CreateIfNotExists();
 
+            // Get the first request to use for a message
+            Request r =  db.Requests.Find(1);
+            if (r == null)
+            {
+                throw new Exception("Didnt find a request with an Id of 1");
+            }
+            var requestMessge = (RequestMessage) r;
+            string requestMessageString = JsonConvert.SerializeObject(requestMessge);
+
             // Create a message and add it to the queue.
-            CloudQueueMessage message = new CloudQueueMessage("Hello, World");
+            CloudQueueMessage message = new CloudQueueMessage(requestMessageString);
             queue.AddMessage(message);
         }
 
