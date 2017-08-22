@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Data.Entity;
 using System.Net;
-using System.Web;
+using System.Threading.Tasks;
 using System.Web.Mvc;
-using Xekina.DataAccess;
-using Xekina.Models;
+using Xekina.Data;
+using Xekina.Data.Models;
 
 namespace Xekina.Controllers
 {

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using Xekina.Models;
+using Xekina.Data.Models;
 
 namespace Xekina.ViewModels
 {
@@ -45,6 +45,24 @@ namespace Xekina.ViewModels
                 CreateEnvironments = ud.CreateEnvironments,
                 ResourceGroupLocation = ud.ResourceGroupLocation,
                 UserId = ud.UserId,
+                ArtifactRepoBranch = ud.ArtifactRepoBranch,
+                ArtifactRepoFolder = ud.ArtifactRepoFolder,
+                ArtifactRepoUri = ud.ArtifactRepoUri,
+                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken
+            };
+        }
+        public static explicit operator UserDefaultsViewModel(UserDefaults ud)
+        {
+            return new UserDefaultsViewModel
+            {
+                CommitSampleProject = ud.CommitSampleProject,
+                CreateBuildAndReleaseProcess = ud.CreateBuildAndReleaseProcess,
+                CreateDevTestLab = ud.CreateDevTestLab,
+                CreateVSTSProject = ud.CreateVSTSProject,
+                CreateEnvironments = ud.CreateEnvironments,
+                ResourceGroupLocation = ud.ResourceGroupLocation,
+                UserId = ud.UserId,
+                ResourceGroupLocationSelectList = new List<System.Web.Mvc.SelectListItem>(),
                 ArtifactRepoBranch = ud.ArtifactRepoBranch,
                 ArtifactRepoFolder = ud.ArtifactRepoFolder,
                 ArtifactRepoUri = ud.ArtifactRepoUri,

@@ -2,17 +2,9 @@
 using Microsoft.Azure.KeyVault;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
-using Newtonsoft.Json;
-using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Mvc;
 using Xekina.Authentication;
-using Xekina.Models;
 
 namespace Xekina.Controllers
 {

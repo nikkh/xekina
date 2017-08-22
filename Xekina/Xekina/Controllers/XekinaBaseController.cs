@@ -1,10 +1,5 @@
-﻿using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using Xekina.DataAccess;
+﻿using System.Web.Mvc;
+using Xekina.Data;
 
 namespace Xekina.Controllers
 {
@@ -12,18 +7,6 @@ namespace Xekina.Controllers
     {
         protected XekinaWebContext db = new XekinaWebContext();
 
-        // Redis Connection string info
-        private static Lazy<ConnectionMultiplexer> lazyConnection = new Lazy<ConnectionMultiplexer>(() =>
-        {
-            return ConnectionMultiplexer.Connect(RedisConnectorHelper.RedisConnectionString);
-        });
-
-        public static ConnectionMultiplexer Connection
-        {
-            get
-            {
-                return lazyConnection.Value;
-            }
-        }
+        
     }
 }

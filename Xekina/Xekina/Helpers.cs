@@ -1,18 +1,12 @@
-﻿using Microsoft.Azure;
-using Microsoft.Azure.KeyVault;
-using Newtonsoft.Json;
-using StackExchange.Redis;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using Xekina.Authentication;
-using Xekina.Models;
+using Xekina.Data.Models;
+using Xekina.ViewModels;
 
 namespace Xekina
 {
@@ -35,12 +29,12 @@ namespace Xekina
             var cache = RedisConnectorHelper.Connection.GetDatabase();
             string user = ClaimsPrincipal.Current.FindFirst(ClaimTypes.Name).Value;
 
-            List<UserSubscription> userSubscriptions;
+            List<UserSubscriptionViewModel> userSubscriptions;
             string userSubscriptionCacheKey = RedisConnectorHelper.GetUserSubscriptionCacheKey(user);
             string serializedSubscriptions = cache.StringGet(userSubscriptionCacheKey);
             if (!String.IsNullOrEmpty(serializedSubscriptions))
             {
-                userSubscriptions = JsonConvert.DeserializeObject<List<UserSubscription>>(serializedSubscriptions);
+                userSubscriptions = JsonConvert.DeserializeObject<List<UserSubscriptionViewModel>> (serializedSubscriptions);
             }
             else
             {
@@ -76,18 +70,18 @@ namespace Xekina
         }
 
 
-    public async Task<List<UserSubscription>> GetSubscriptionsForUser()
+    public async Task<List<UserSubscriptionViewModel>> GetSubscriptionsForUser()
     {
             var cache = RedisConnectorHelper.Connection.GetDatabase();
             string user = ClaimsPrincipal.Current.FindFirst(ClaimTypes.Name).Value;
             
 
             string userSubscriptionCacheKey = RedisConnectorHelper.GetUserSubscriptionCacheKey(user);
-            List<UserSubscription> userSubscriptions = new List<UserSubscription>(); 
+            List<UserSubscriptionViewModel> userSubscriptions = new List<UserSubscriptionViewModel>(); 
             string serializedSubscriptions = cache.StringGet(userSubscriptionCacheKey);
             if (!String.IsNullOrEmpty(serializedSubscriptions))
             {
-                userSubscriptions = JsonConvert.DeserializeObject<List<UserSubscription>>(serializedSubscriptions);
+                userSubscriptions = JsonConvert.DeserializeObject<List<UserSubscriptionViewModel>>(serializedSubscriptions);
             }
             else
             {
@@ -100,12 +94,12 @@ namespace Xekina
                     s.SubscriptionId = item["subscriptionId"].ToString();
                     s.SubscriptionName = item["displayName"].ToString();
                     s.State = item["state"].ToString();
-                    userSubscriptions.Add(s);
+                    userSubscriptions.Add((UserSubscriptionViewModel)s);
                 }
                 cache.StringSet(userSubscriptionCacheKey, JsonConvert.SerializeObject(userSubscriptions));
             }
 
-            return userSubscriptions;
+            return  userSubscriptions;
     }
     }
 }

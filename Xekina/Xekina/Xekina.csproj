@@ -253,6 +253,7 @@
     <Compile Include="RestApi.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\UserDefaultsViewModel.cs" />
+    <Compile Include="ViewModels\UserSubscriptionViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.css" />
@@ -334,6 +335,12 @@
     <EmbeddedResource Include="Migrations\201708181618525_githubpatinuserdefaults.resx">
       <DependentUpon>201708181618525_githubpatinuserdefaults.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Xekina.Data\Xekina.Data.csproj">
+      <Project>{930e159a-5009-4be2-b211-44f96856e7a2}</Project>
+      <Name>Xekina.Data</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

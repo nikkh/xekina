@@ -1,20 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Net;
-using System.Web;
 using System.Web.Mvc;
-using Xekina.DataAccess;
-using Xekina.Models;
+using Xekina.Data.Models;
 using Xekina.ViewModels;
-using Xekina.Authentication;
-using System.Configuration;
-using StackExchange.Redis;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure;
 
 namespace Xekina.Controllers
 {
