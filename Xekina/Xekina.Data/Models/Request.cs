@@ -16,7 +16,7 @@ namespace Xekina.Data.Models
         public DateTimeOffset DateRequested { get; set; }
         public string RequestedBy { get; set; }
 
-        public RequestStatus Status { get; set; }
+        public RequestStatus Status { get; set; } 
         public virtual ICollection<RequestLog> RequestLogs { get; set; }
 
     }
