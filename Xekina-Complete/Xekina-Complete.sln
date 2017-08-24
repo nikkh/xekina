@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeploymentHelper", "Spike\DeploymentHelper\DeploymentHelper.csproj", "{26E478A4-E971-4614-AC67-4742727E48FB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSTS-Spike", "Spike\VSTS-Spike\VSTS-Spike.csproj", "{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XekinaEngine", "XekinaEngine\XekinaEngine.csproj", "{6793FA45-6F9B-41FE-8FED-BDCD9663247D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xekina.Data", "Xekina.Data\Xekina.Data.csproj", "{930E159A-5009-4BE2-B211-44F96856E7A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xekina", "Xekina\Xekina.csproj", "{317AA5BB-C092-4204-9F4E-3454B6A546FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSTS-Spike", "VSTS-Spike\VSTS-Spike.csproj", "{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeploymentHelper", "DeploymentHelper\DeploymentHelper.csproj", "{26E478A4-E971-4614-AC67-4742727E48FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{26E478A4-E971-4614-AC67-4742727E48FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26E478A4-E971-4614-AC67-4742727E48FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26E478A4-E971-4614-AC67-4742727E48FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26E478A4-E971-4614-AC67-4742727E48FB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6793FA45-6F9B-41FE-8FED-BDCD9663247D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6793FA45-6F9B-41FE-8FED-BDCD9663247D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6793FA45-6F9B-41FE-8FED-BDCD9663247D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +31,14 @@ Global
 		{317AA5BB-C092-4204-9F4E-3454B6A546FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{317AA5BB-C092-4204-9F4E-3454B6A546FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{317AA5BB-C092-4204-9F4E-3454B6A546FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DF7D173-A67B-4CE4-99CE-0BF105BE669D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26E478A4-E971-4614-AC67-4742727E48FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26E478A4-E971-4614-AC67-4742727E48FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26E478A4-E971-4614-AC67-4742727E48FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26E478A4-E971-4614-AC67-4742727E48FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
