@@ -1,0 +1,45 @@
+﻿{
+  "count": 2,
+  "value": [
+    {
+      "data": {
+        "subscriptionId": "796b222b-b926-4bd5-a6c6-b7f6041433d7",
+        "subscriptionName": "Nicks Internal Subscription",
+        "azureSpnRoleAssignmentId": "483a5a31-f10a-4356-9eff-160dfb609e3c",
+        "spnObjectId": "b71b0ddd-f2f0-47ca-baa1-423d1bb7ccb0",
+        "appObjectId": "c4a8a212-8b20-41ec-a7ad-a1baac1b4844",
+        "creationMode": "Automatic",
+        "environment": "AzureCloud"
+      },
+      "id": "53db3d2f-cc2a-4b75-a323-8d13e9075668",
+      "name": "Nicks Internal Subscription (796b222b-b926-4bd5-a6c6-b7f6041433d7)",
+      "type": "azurerm",
+      "url": "https://management.azure.com/",
+      "createdBy": {
+        "id": "6566631f-83fa-460f-a3b0-5de815bba2d9",
+        "displayName": "Nick Hill",
+        "uniqueName": "nhill@microsoft.com"
+      },
+      "authorization": { "scheme": "ServicePrincipal" },
+      "isReady": true,
+      "operationStatus": {
+        "state": "Ready",
+        "statusMessage": ""
+      }
+    },
+    {
+      "data": {},
+      "id": "6286f345-734e-47aa-902a-d5b7cb60f638",
+      "name": "GitHub connection 1",
+      "type": "github",
+      "url": "http://github.com",
+      "createdBy": {
+        "id": "6566631f-83fa-460f-a3b0-5de815bba2d9",
+        "displayName": "Nick Hill",
+        "uniqueName": "nhill@microsoft.com"
+      },
+      "authorization": { "scheme": "PersonalAccessToken" },
+      "isReady": true
+    }
+  ]
+}

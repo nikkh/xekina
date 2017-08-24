@@ -1,0 +1,28 @@
+﻿{
+  "artifacts": [
+    {
+      "sourceId": "639c543d-848c-4fab-95dc-4a422d5cdd29:13",
+      "type": "Build",
+      "alias": "Xekina-ASP.NET (PREVIEW)-CI",
+      "definitionReference": {
+        "artifactSourceDefinitionUrl": {
+          "id": "https://nicks-ms-subscription.visualstudio.com/_permalink/_build/index?collectionId=d43507f1-e915-4dd0-9e17-1d91f8582241&projectId=639c543d-848c-4fab-95dc-4a422d5cdd29&definitionId=13",
+          "name": ""
+        },
+        "defaultVersionType": {
+          "id": "latestType",
+          "name": "Latest"
+        },
+        "definition": {
+          "id": "13",
+          "name": "Xekina-ASP.NET (PREVIEW)-CI"
+        },
+        "project": {
+          "id": "639c543d-848c-4fab-95dc-4a422d5cdd29",
+          "name": "Xekina"
+        }
+      },
+      "isPrimary": true
+    }
+  ]
+}

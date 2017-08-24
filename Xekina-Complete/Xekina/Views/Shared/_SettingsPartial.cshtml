@@ -1,0 +1,22 @@
+﻿@if (Request.IsAuthenticated)
+{
+    <text>
+        <ul class="nav navbar-nav">
+         
+            <li class="dropdown">
+                <a class="dropdown-toggle" role="button" aria-expanded="true" href="#" data-toggle="dropdown">Settings <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li>@Html.ActionLink("Defaults", "EditDefaults", "Settings")</li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">Separated link</a></li>
+                    <li class="divider"></li>
+                    
+                    <li>@Html.ActionLink("My Subscriptions", "MySubscriptions", "Home")</li>
+                </ul>
+            </li>
+        </ul>
+    </text>
+}
+

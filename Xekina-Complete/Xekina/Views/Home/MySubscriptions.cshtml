@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Xekina.ViewModels.UserSubscriptionViewModel>
+
+@{
+    ViewBag.Title = "MySubscriptions";
+}
+
+<h2>My Subscriptions</h2>
+<p>This page displays the list of Azure Subscriptions that you may use to create resources for your projects. </p> 
+<p>In order for a subscription to appear in this list, you have to have a role assignment with the identity you have used to logon to xekina.
+    I'm not quite sure what the role assignment is.  I assume its owner or contributor.  Will evolve this text as I explore </p>
+       <p> The xekina application must also have access.  At a minimum it is READER but it may need to be higher as I create resources.  Again I will keep you posted.  
+        
+    
+</p>
+<p>In addition, the subscription must be in an enabled state.</p>
+
+<table class="table">
+    <tr>
+       
+        <th>
+            @Html.DisplayNameFor(model => model.SubscriptionId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SubscriptionName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.State)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.SubscriptionId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.SubscriptionName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.State)
+            </td>
+    
+        </tr>
+    }
+
+</table>
+
