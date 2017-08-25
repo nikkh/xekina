@@ -15,42 +15,46 @@ namespace XekinaEngine
 {
     public class Functions
     {
-        
         // This function will get triggered/executed when a new message is written 
         // on an Azure Queue called queue.
         public static void ProcessQueueMessage([QueueTrigger("%RequestQueueName%")] string message, TextWriter log)
         {
             XekinaWebContext db = new XekinaWebContext();
             var incomingRequest = JsonConvert.DeserializeObject<RequestMessage>(message);
+
             TraceHelper.WriteInfo("Incoming message: {0}", incomingRequest.RequestID.ToString());
+            log.WriteLine("Incoming Message - Request Id" + incomingRequest.RequestID.ToString());
 
             var request = db.Requests.Find(incomingRequest.RequestID);
-            Random rnd = new Random();
-            TraceHelper.WriteInfo("Database {0}", db.Database.Connection.DataSource);
-            for (int i = 0; i < 10; i++)
-            {
-                TraceHelper.WriteInfo("Aribtrary Loop: index={0}", i.ToString());
-                RequestLog rl = new RequestLog();
-                rl.Request = request;
-                rl.HeadlineActivity = String.Format("Activity #{0}", i);
-                rl.Phase = RequestPhase.Environments;
-                if (i < 7) rl.Phase = RequestPhase.DTLab;
-                if (i < 5) rl.Phase = RequestPhase.BuildAndRelease;
-                if (i < 3) rl.Phase = RequestPhase.VSTS;
-                rl.Start = System.DateTimeOffset.Now;
-                rl.Status = RequestStatus.InProgress;
-                rl.Data = "you might want to put something in here";
-                if (i == 10) rl.Status = RequestStatus.Completed;
-                Thread.Sleep(rnd.Next(1, 5000));
-                rl.Finish = System.DateTimeOffset.Now;
-                TraceHelper.WriteInfo("Writing a database record: index={0}", rl.HeadlineActivity);
-                db.RequestLogs.Add(rl);
-                db.SaveChanges();
-            }
-            
-            db.SaveChanges();
-            log.WriteLine(message);
+
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.Initialize, "Xekina is processing this request", request.ProjectName);
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Build of VSTS Project", request.ProjectName);
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Create GIT Repository", request.ProjectName);
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.SampleProject, "Check in sample project", request.ProjectName);
+            WriteLogRecord(db, request, RequestStatus.Completed, RequestPhase.Complete, "Project created sucessfully", request.ProjectName);
+
+
+
+
             db.Dispose();
+        }
+
+        static void WriteLogRecord(XekinaWebContext db, Request request, RequestStatus status, RequestPhase phase, string headlineActivity, string data)
+        {
+            Random rnd = new Random();
+            RequestLog requestLog = new RequestLog();
+            request.Status = status;
+            
+            requestLog.HeadlineActivity = headlineActivity;
+            requestLog.Request = request;
+            requestLog.Phase = phase;
+            requestLog.Start = System.DateTimeOffset.Now;
+            Thread.Sleep(rnd.Next(1, 5000));
+            requestLog.Finish = System.DateTimeOffset.Now;
+            requestLog.Data = request.ProjectName;
+            db.RequestLogs.Add(requestLog);
+            db.SaveChanges();
+
         }
     }
 }

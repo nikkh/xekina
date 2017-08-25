@@ -1,16 +1,23 @@
-﻿using System.Data.Entity;
+﻿using Microsoft.Azure;
+using Microsoft.Azure.KeyVault;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Newtonsoft.Json;
+using System;
+using System.Data.Entity;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using Xekina.Authentication;
 using Xekina.Data;
+using Xekina.Data.Messages;
 using Xekina.Data.Models;
 
 namespace Xekina.Controllers
 {
-    public class RequestsController : Controller
+    public class RequestsController : XekinaBaseController
     {
-        private XekinaWebContext db = new XekinaWebContext();
-
+        
         // GET: Requests
         public async Task<ActionResult> Index()
         {
@@ -49,10 +56,30 @@ namespace Xekina.Controllers
             {
                 db.Requests.Add(request);
                 await db.SaveChangesAsync();
+                RequestMessage rm = (RequestMessage) request;
+                AddRequestMessageToEngineQueue(rm);
                 return RedirectToAction("Index");
             }
 
             return View(request);
+        }
+
+        private void AddRequestMessageToEngineQueue(RequestMessage rm)
+        {
+            
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(queueConnectionString);
+            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
+            // Retrieve a reference to a queue.
+            CloudQueue queue = queueClient.GetQueueReference(CloudConfigurationManager.GetSetting("RequestQueueName"));
+
+            // Create the queue if it doesn't already exist.
+            queue.CreateIfNotExists();
+                        
+            string requestMessageString = JsonConvert.SerializeObject(rm);
+
+            // Create a message and add it to the queue.
+            CloudQueueMessage message = new CloudQueueMessage(requestMessageString);
+            queue.AddMessage(message);
         }
 
         // GET: Requests/Edit/5

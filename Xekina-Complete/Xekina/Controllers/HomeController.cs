@@ -17,35 +17,10 @@ namespace Xekina.Controllers
     {
         public ActionResult Index()
         {
-            DoMessage("Hello");
-            return View();
+           return View();
         }
 
-        private void DoMessage(string v)
-        {
-            var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(TokenHelper.GetTokenForCurrentApplication));
-            string queueConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(queueConnectionString);
-            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
-            // Retrieve a reference to a queue.
-            CloudQueue queue = queueClient.GetQueueReference(CloudConfigurationManager.GetSetting("RequestQueueName"));
-
-            // Create the queue if it doesn't already exist.
-            queue.CreateIfNotExists();
-
-            // Get the first request to use for a message
-            Request r =  db.Requests.Find(1);
-            if (r == null)
-            {
-                throw new Exception("Didnt find a request with an Id of 1");
-            }
-            var requestMessge = (RequestMessage) r;
-            string requestMessageString = JsonConvert.SerializeObject(requestMessge);
-
-            // Create a message and add it to the queue.
-            CloudQueueMessage message = new CloudQueueMessage(requestMessageString);
-            queue.AddMessage(message);
-        }
+      
 
         public async Task<ActionResult> MySubscriptions()
         {

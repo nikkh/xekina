@@ -11,14 +11,18 @@ namespace Xekina.Data.Messages
     {
 
         public int RequestID { get; set; }
-        
+       
+
         public static explicit operator RequestMessage(Request req)
         {
             return new RequestMessage
             {
-                RequestID = req.RequestID
+                RequestID = req.RequestID,
+              
             };
         }
+
+        
     }
 }
 
