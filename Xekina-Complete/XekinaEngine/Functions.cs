@@ -22,11 +22,14 @@ namespace XekinaEngine
         {
             XekinaWebContext db = new XekinaWebContext();
             var incomingRequest = JsonConvert.DeserializeObject<RequestMessage>(message);
+            TraceHelper.WriteInfo("Incoming message: {0}", incomingRequest.RequestID.ToString());
+
             var request = db.Requests.Find(incomingRequest.RequestID);
             Random rnd = new Random();
-            
+            TraceHelper.WriteInfo("Database {0}", db.Database.Connection.DataSource);
             for (int i = 0; i < 10; i++)
             {
+                TraceHelper.WriteInfo("Aribtrary Loop: index={0}", i.ToString());
                 RequestLog rl = new RequestLog();
                 rl.Request = request;
                 rl.HeadlineActivity = String.Format("Activity #{0}", i);
@@ -40,6 +43,7 @@ namespace XekinaEngine
                 if (i == 10) rl.Status = RequestStatus.Completed;
                 Thread.Sleep(rnd.Next(1, 5000));
                 rl.Finish = System.DateTimeOffset.Now;
+                TraceHelper.WriteInfo("Writing a database record: index={0}", rl.HeadlineActivity);
                 db.RequestLogs.Add(rl);
                 db.SaveChanges();
             }
