@@ -7,7 +7,7 @@
     <ProjectGuid>{D1C6B8EA-2EA6-468A-A4C9-88F7113C8A93}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>XekinaData</RootNamespace>
+    <RootNamespace>Xekina.Data</RootNamespace>
     <AssemblyName>XekinaData</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
