@@ -114,13 +114,13 @@
     <None Include="Properties\webjob-publish-settings.json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Xekina\Xekina.Data\Xekina.Data.csproj">
-      <Project>{930e159a-5009-4be2-b211-44f96856e7a2}</Project>
-      <Name>Xekina.Data</Name>
-    </ProjectReference>
+    <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
+    <ProjectReference Include="..\XekinaData\XekinaData.csproj">
+      <Project>{d1c6b8ea-2ea6-468a-a4c9-88f7113c8a93}</Project>
+      <Name>XekinaData</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Web.WebJobs.Publish.1.0.12\tools\webjobs.targets" Condition="Exists('..\packages\Microsoft.Web.WebJobs.Publish.1.0.12\tools\webjobs.targets')" />
