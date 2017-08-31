@@ -8,6 +8,7 @@ using Owin;
 using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OpenIdConnect;
+using System.Diagnostics;
 
 namespace Xekina
 {
@@ -25,7 +26,7 @@ namespace Xekina
             app.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
 
             app.UseCookieAuthentication(new CookieAuthenticationOptions());
-
+            Trace.TraceInformation("@@ Azure AD redirect uri is {0}", redirectUri);
             app.UseOpenIdConnectAuthentication(
                 new OpenIdConnectAuthenticationOptions
                 {

@@ -4,6 +4,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Xekina.Authentication;
@@ -17,6 +18,7 @@ namespace Xekina.Controllers
     {
         public ActionResult Index()
         {
+           Trace.TraceInformation("@@ Home:Index()");
            return View();
         }
 
