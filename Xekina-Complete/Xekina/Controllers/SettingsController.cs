@@ -15,7 +15,7 @@ namespace Xekina.Controllers
     {
         KeyVaultClient keyVaultClient;
         string queueConnectionString;
-        
+        XekinaWebContext db = new XekinaWebContext();
         public SettingsController()
         {
             keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(TokenHelper.GetTokenForCurrentApplication));
