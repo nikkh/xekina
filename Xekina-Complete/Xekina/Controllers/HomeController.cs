@@ -14,7 +14,7 @@ using Xekina.Data.Models;
 namespace Xekina.Controllers
 {
     [Authorize]
-    public class HomeController : XekinaBaseController
+    public class HomeController : Controller
     {
         public ActionResult Index()
         {

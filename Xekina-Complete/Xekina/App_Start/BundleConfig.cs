@@ -1,4 +1,6 @@
-﻿using System.Web;
+﻿using System.Diagnostics;
+using System.Reflection;
+using System.Web;
 using System.Web.Optimization;
 
 namespace Xekina
@@ -8,6 +10,8 @@ namespace Xekina
         // For more information on bundling, visit https://go.microsoft.com/fwlink/?LinkId=301862
         public static void RegisterBundles(BundleCollection bundles)
         {
+            Trace.TraceInformation("@@ Entering method: {0}", MethodBase.GetCurrentMethod().Name);
+           
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
                         "~/Scripts/jquery-{version}.js"));
 
@@ -26,6 +30,8 @@ namespace Xekina
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/superhero.css",
                       "~/Content/site.css"));
+            
+            Trace.TraceInformation("@@ Leaving method: {0}", MethodBase.GetCurrentMethod().Name);
         }
     }
 }

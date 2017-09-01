@@ -9,6 +9,7 @@ using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OpenIdConnect;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Xekina
 {
@@ -23,6 +24,8 @@ namespace Xekina
 
         public void ConfigureAuth(IAppBuilder app)
         {
+            
+            Trace.TraceInformation("@@ Entering method: {0}", MethodBase.GetCurrentMethod().Name);
             app.SetDefaultSignInAsAuthenticationType(CookieAuthenticationDefaults.AuthenticationType);
 
             app.UseCookieAuthentication(new CookieAuthenticationOptions());
@@ -36,6 +39,7 @@ namespace Xekina
                     RedirectUri = redirectUri 
 
                 });
+            Trace.TraceInformation("@@ Leaving method: {0}", MethodBase.GetCurrentMethod().Name);
         }
     }
 }
