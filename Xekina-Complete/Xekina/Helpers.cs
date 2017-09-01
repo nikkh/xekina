@@ -64,7 +64,7 @@ namespace Xekina
                         }
                    }
                }
-                cache.StringSet(userLocationCacheKey, JsonConvert.SerializeObject(serializedLocations));
+                cache.StringSet(userLocationCacheKey, JsonConvert.SerializeObject(consolidatedLocations));
             }
             return consolidatedLocations;
         }

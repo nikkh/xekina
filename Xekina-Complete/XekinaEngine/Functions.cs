@@ -44,7 +44,7 @@ namespace XekinaEngine
             Random rnd = new Random();
             RequestLog requestLog = new RequestLog();
             request.Status = status;
-            
+            requestLog.Status = status;
             requestLog.HeadlineActivity = headlineActivity;
             requestLog.Request = request;
             requestLog.Phase = phase;

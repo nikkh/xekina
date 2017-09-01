@@ -4,11 +4,10 @@
     ViewBag.Title = "Details";
 }
 
-<h2>Details</h2>
+<h2>Request</h2>
 
 <div>
-    <h4>Request</h4>
-    <hr />
+    
     <dl class="dl-horizontal">
         <dt>
             @Html.DisplayNameFor(model => model.ProjectName)
@@ -68,7 +67,34 @@
 
     </dl>
 </div>
+<hr/>
+<h2>Progress Logs</h2>
+<table class="table">
+<tr>
+    <th>Started</th>
+    <th>Phase</th>
+    <th>Headline Activity</th>
+    <th>Finish</th>
+    <th>Status</th>
+    <th>Data</th>
+    <th>Exception</th>
+</tr>
+@foreach (var item in Model.RequestLogs.OrderBy(i=>i.Start))
+{
+    <tr>
+        <td>@item.Start</td>
+        <td>@item.Phase</td>
+        <td>@item.HeadlineActivity</td>
+        <td>@item.Finish</td>
+        <td>@item.Status</td>
+        <td>@item.Data</td>
+        <td>@item.Exception</td>
+    </tr>
+}
+ </table>
+
 <p>
     @Html.ActionLink("Edit", "Edit", new { id = Model.RequestID }) |
     @Html.ActionLink("Back to List", "Index")
 </p>
+

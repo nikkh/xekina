@@ -7,11 +7,13 @@ using System;
 using System.Data.Entity;
 using System.Net;
 using System.Threading.Tasks;
+using System.Web.Helpers;
 using System.Web.Mvc;
 using Xekina.Authentication;
 using Xekina.Data;
 using Xekina.Data.Messages;
 using Xekina.Data.Models;
+using System.Linq;
 
 namespace Xekina.Controllers
 {
@@ -31,6 +33,9 @@ namespace Xekina.Controllers
         {
             return View(await db.Requests.ToListAsync());
         }
+
+      
+
 
         // GET: Requests/Details/5
         public async Task<ActionResult> Details(int? id)
