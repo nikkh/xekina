@@ -22,7 +22,7 @@ namespace Xekina.Authentication
             var authContext = new AuthenticationContext(authority);
             ClientCredential clientCred = new ClientCredential(CloudConfigurationManager.GetSetting("ida:ClientId"),
                         CloudConfigurationManager.GetSetting("ida:ClientSecret"));
-            AuthenticationResult result = await authContext.AcquireTokenAsync(resource, clientCred);
+            AuthenticationResult result = authContext.AcquireToken(resource, clientCred);
 
             if (result == null)
                 throw new InvalidOperationException("Failed to obtain the JWT token for application");
