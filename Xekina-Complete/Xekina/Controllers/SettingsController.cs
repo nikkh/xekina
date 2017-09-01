@@ -1,15 +1,25 @@
-﻿using System;
+﻿using Microsoft.Azure;
+using Microsoft.Azure.KeyVault;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using Xekina.Authentication;
 using Xekina.Data.Models;
 using Xekina.ViewModels;
 
 namespace Xekina.Controllers
 {
-    public class SettingsController : XekinaBaseController
+    public class SettingsController : Controller
     {
-       
+        KeyVaultClient keyVaultClient;
+        string queueConnectionString;
+        XekinaWebContext db = new XekinaWebContext();
+        public SettingsController()
+        {
+            keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(TokenHelper.GetTokenForCurrentApplication));
+            queueConnectionString = keyVaultClient.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
+        }
 
         // GET: Settings/Edit/5
         public async Task<ActionResult> EditDefaults()

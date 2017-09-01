@@ -15,8 +15,16 @@ using Xekina.Data.Models;
 
 namespace Xekina.Controllers
 {
-    public class RequestsController : XekinaBaseController
+    public class RequestsController : Controller
     {
+        KeyVaultClient keyVaultClient;
+        string queueConnectionString;
+        XekinaWebContext db = new XekinaWebContext();
+        public RequestsController()
+        {
+            keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(TokenHelper.GetTokenForCurrentApplication));
+            queueConnectionString = keyVaultClient.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
+        }
         
         // GET: Requests
         public async Task<ActionResult> Index()
