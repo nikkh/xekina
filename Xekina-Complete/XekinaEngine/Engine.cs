@@ -27,18 +27,13 @@ namespace XekinaEngine
 
         public string CreateProject(string projectName, string projectDescription)
         {
+            TraceHelper.TraceInformation(String.Format("Engine is creating project", projectName));
             ProjectHttpClient projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
             // We can also create new projects, i.e. like this:
             var newTeamProjectToCreate = new TeamProject();
-            //var somewhatRandomValueForProjectName = projectName;
-            
-            // mandatory information is name,
-            //newTeamProjectToCreate.Name = $"Project {somewhatRandomValueForProjectName}";
+           
             newTeamProjectToCreate.Name = projectName;
-            // .. description
             newTeamProjectToCreate.Description = "@xekina@ " + projectDescription;
-
-            // and capabilities need to be provided
             newTeamProjectToCreate.Capabilities = new Dictionary<string, Dictionary<string, string>>
 {
 {
@@ -61,7 +56,7 @@ namespace XekinaEngine
             // ticket / reference to the operation which you can use to track the progress and/or completion
             var operationReference = projectHttpClient.QueueCreateProject(newTeamProjectToCreate).Result;
 
-            Trace.TraceInformation(String.Format("Project '{0}' creation is '{1}'", newTeamProjectToCreate.Name, operationReference.Status));
+            TraceHelper.TraceInformation(String.Format("Project '{0}' creation is '{1}'", newTeamProjectToCreate.Name, operationReference.Status));
 
             // tracking the status via a OperationsHttpClient (for the Project collection
             var operationsHttpClientForKnownProjectCollection = GetVssConnection().GetClient<OperationsHttpClient>();
@@ -71,7 +66,7 @@ namespace XekinaEngine
                 && projectCreationOperation.Status != OperationStatus.Failed
                 && projectCreationOperation.Status != OperationStatus.Cancelled)
                 {
-                    Trace.WriteLine("operation has not finished... waiting 500Ms");
+                    TraceHelper.TraceVerbose("operation has not finished... waiting 500Ms");
                     Thread.Sleep(500); // yuck
 
                     projectCreationOperation = operationsHttpClientForKnownProjectCollection.GetOperation(operationReference.Id).Result;
@@ -79,7 +74,7 @@ namespace XekinaEngine
 
             // alright - creation is finished, successfully or not
             
-            Trace.TraceInformation(String.Format("Project '{0}' creation finished with State '{1}' & Message: '{2}'",
+            TraceHelper.TraceInformation(String.Format("Project '{0}' creation finished with State '{1}' & Message: '{2}'",
             newTeamProjectToCreate.Name,
             projectCreationOperation.Status,
             projectCreationOperation.ResultMessage ?? "n.a."));

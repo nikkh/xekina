@@ -24,8 +24,8 @@ namespace XekinaEngine
 
             var incomingRequest = JsonConvert.DeserializeObject<RequestMessage>(message);
 
-            TraceHelper.WriteInfo("Incoming message: {0}", incomingRequest.RequestID.ToString());
-            log.WriteLine("Incoming Message - Request Id" + incomingRequest.RequestID.ToString());
+            TraceHelper.TraceInformation(String.Format("Incoming message: {0}", incomingRequest.RequestID.ToString()));
+            //log.WriteLine("Incoming Message - Request Id" + incomingRequest.RequestID.ToString());
 
             var request = db.Requests.Find(incomingRequest.RequestID);
 

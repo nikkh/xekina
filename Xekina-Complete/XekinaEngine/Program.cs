@@ -30,32 +30,34 @@ namespace XekinaEngine
         // AzureWebJobsDashboard and AzureWebJobsStorage
         static void Main()
         {
-            TraceHelper.WriteInfo("Xekina.Engine is starting up");
+            TraceHelper.TraceInformation("Xekina.Engine is starting up");
             if (Convert.ToBoolean(CloudConfigurationManager.GetSetting("UseLocalDB")))
             {
-                TraceHelper.WriteInfo("Xekina.Engine will be using local database");
+                TraceHelper.TraceInformation("Xekina.Engine will be using local database");
                 string dataDirectory = CloudConfigurationManager.GetSetting("DataDirectory");
                 if (String.IsNullOrEmpty(dataDirectory))
                 {
-                    TraceHelper.WriteInfo("Xekina.Engine will use " +dataDirectory );
+                    
                     throw new Exception("Configuration requires use of LocalDB, but data directory is not set in configuration");
                 }
-                Console.WriteLine("Running locally. Data diectory will be set to " + dataDirectory);
+                TraceHelper.TraceVerbose("Running locally. Data diectory will be set to " + dataDirectory);
                 AppDomain.CurrentDomain.SetData("DataDirectory", dataDirectory);
             }
 
 
             
             var kv = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(GetTokenForCurrentApplication));
-            TraceHelper.WriteInfo("Key Vault Client Created successfully");
+            TraceHelper.TraceVerbose("Key Vault Client Created successfully");
 
             string queueConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("QueueStorageConnectionStringKvUri")).Result.Value;
             string dashboardConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("AzureWebJobsDashboardConnectionStringKvUri")).Result.Value;
-            TraceHelper.WriteInfo("Retrieved connection strings");
+            TraceHelper.TraceVerbose("Retrieved connection strings");
 
             Global.VstsPersonalAccesstoken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
             Global.VstsCollectionUri = CloudConfigurationManager.GetSetting("VstsCollectionUri");
             Global.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
+            TraceHelper.TraceInformation("Secrets retrieved from KeyVault");
+
             var host = new JobHost(new JobHostConfiguration
             {
                 NameResolver = new QueueNameResolver(),
