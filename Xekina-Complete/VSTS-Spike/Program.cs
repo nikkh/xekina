@@ -59,6 +59,7 @@ namespace VSTS_Spike
         #region Utility Methods
         static VssConnection GetVssConnection()
         {
+            // VssConnection connection = new VssConnection(new Uri(collectionUri), new VssBasicCredential(string.Empty, pat));
             VssCredentials creds = new VssClientCredentials();
             creds.Storage = new VssClientCredentialStorage();
             return new VssConnection(new Uri(UrlBase), creds);

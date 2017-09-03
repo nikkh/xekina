@@ -53,6 +53,9 @@ namespace XekinaEngine
             string dashboardConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("AzureWebJobsDashboardConnectionStringKvUri")).Result.Value;
             TraceHelper.WriteInfo("Retrieved connection strings");
 
+            Global.VstsPersonalAccesstoken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
+            Global.VstsCollectionUri = CloudConfigurationManager.GetSetting("VstsCollectionUri");
+            Global.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
             var host = new JobHost(new JobHostConfiguration
             {
                 NameResolver = new QueueNameResolver(),

@@ -20,6 +20,8 @@ namespace XekinaEngine
         public static void ProcessQueueMessage([QueueTrigger("%RequestQueueName%")] string message, TextWriter log)
         {
             XekinaWebContext db = new XekinaWebContext();
+            Engine engine = new Engine();
+
             var incomingRequest = JsonConvert.DeserializeObject<RequestMessage>(message);
 
             TraceHelper.WriteInfo("Incoming message: {0}", incomingRequest.RequestID.ToString());
@@ -28,7 +30,9 @@ namespace XekinaEngine
             var request = db.Requests.Find(incomingRequest.RequestID);
 
             WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.Initialize, "Xekina is processing this request", request.ProjectName);
-            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Build of VSTS Project", request.ProjectName);
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Build of VSTS Project", String.Format("Creation of project {0} has started", request.ProjectName));
+            engine.CreateProject(request.ProjectName, request.ProjectDescription);
+            WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Build of VSTS Project", String.Format("Creation of project {0} has finished", request.ProjectName));
             WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.VSTS, "Create GIT Repository", request.ProjectName);
             WriteLogRecord(db, request, RequestStatus.InProgress, RequestPhase.SampleProject, "Check in sample project", request.ProjectName);
             WriteLogRecord(db, request, RequestStatus.Completed, RequestPhase.Complete, "Project created sucessfully", request.ProjectName);
