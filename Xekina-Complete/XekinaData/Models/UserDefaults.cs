@@ -25,8 +25,9 @@ namespace Xekina.Data.Models
         public string ArtifactRepoFolder { get; set; }
         public string ArtifactRepoBranch { get; set; }
         public string GitHubPersonalAccessToken { get; set; }
+        public string DefaultSubscription { get; set; }
 
-        
+
     }
     
 }

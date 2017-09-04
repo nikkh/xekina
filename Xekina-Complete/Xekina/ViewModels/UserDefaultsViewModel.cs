@@ -18,6 +18,8 @@ namespace Xekina.ViewModels
             CommitSampleProject = true;
             CreateDevTestLab = true;
             CreateEnvironments = true;
+            DefaultSubscriptionSelectList = new List<SelectListItem>();
+            ResourceGroupLocationSelectList = new List<SelectListItem>();
         }
         public UserDefaultsViewModel() { }
         public string UserId { get; set; }
@@ -28,11 +30,13 @@ namespace Xekina.ViewModels
         public bool CreateBuildAndReleaseProcess { get; set; }
         public bool CommitSampleProject { get; set; }
         public string ResourceGroupLocation { get; set; }
+        public string DefaultSubscription { get; set; }
         public string ArtifactRepoUri { get; set; }
         public string ArtifactRepoFolder { get; set; }
         public string ArtifactRepoBranch { get; set; }
         public string GitHubPersonalAccessToken { get; set; }
         public List<SelectListItem> ResourceGroupLocationSelectList { get; set; }
+        public List<SelectListItem> DefaultSubscriptionSelectList { get; set; }
 
         public static explicit operator UserDefaults(UserDefaultsViewModel ud)
         {
@@ -48,7 +52,8 @@ namespace Xekina.ViewModels
                 ArtifactRepoBranch = ud.ArtifactRepoBranch,
                 ArtifactRepoFolder = ud.ArtifactRepoFolder,
                 ArtifactRepoUri = ud.ArtifactRepoUri,
-                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken
+                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken,
+                DefaultSubscription = ud.DefaultSubscription
             };
         }
         public static explicit operator UserDefaultsViewModel(UserDefaults ud)
@@ -62,12 +67,14 @@ namespace Xekina.ViewModels
                 CreateEnvironments = ud.CreateEnvironments,
                 ResourceGroupLocation = ud.ResourceGroupLocation,
                 UserId = ud.UserId,
-                ResourceGroupLocationSelectList = new List<System.Web.Mvc.SelectListItem>(),
                 ArtifactRepoBranch = ud.ArtifactRepoBranch,
                 ArtifactRepoFolder = ud.ArtifactRepoFolder,
                 ArtifactRepoUri = ud.ArtifactRepoUri,
-                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken
-            };
+                GitHubPersonalAccessToken = ud.GitHubPersonalAccessToken,
+                DefaultSubscription = ud.DefaultSubscription,
+                DefaultSubscriptionSelectList = new List<SelectListItem>(),
+                ResourceGroupLocationSelectList = new List<SelectListItem>()
+        };
         }
     }
 }

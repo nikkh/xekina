@@ -72,6 +72,12 @@
                 @Html.DropDownListFor(model => model.ResourceGroupLocation, Model.ResourceGroupLocationSelectList, "-- Location --", new { @class = "form-control" })
             </div>
         </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.DefaultSubscription, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownListFor(model => model.DefaultSubscription, Model.DefaultSubscriptionSelectList,  new { @class = "form-control" })
+            </div>
+        </div>
        <hr/>
         <div class="form-group">
             @Html.LabelFor(model => model.GitHubPersonalAccessToken, htmlAttributes: new { @class = "control-label col-md-2" })

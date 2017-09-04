@@ -35,7 +35,16 @@ namespace Xekina.Controllers
             {
                 vm = (UserDefaultsViewModel)userDefaults;
             }
-            
+
+            var subscriptions = await new Helpers().GetSubscriptionsForUser();
+            bool selected;
+            foreach (var subscription in subscriptions)
+            {
+                selected = false;
+                if (subscription.SubscriptionId == vm.DefaultSubscription) selected = true;
+                vm.DefaultSubscriptionSelectList.Add(new SelectListItem { Text = subscription.SubscriptionName, Value = subscription.SubscriptionId, Selected = selected });
+            }
+
             vm.ResourceGroupLocationSelectList = new List<SelectListItem>();
             Dictionary<String, String> locations = await new Helpers().GetResourceLocationsForUserSubscriptions();
             foreach (var location in locations)
@@ -50,7 +59,7 @@ namespace Xekina.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation,GitHubPersonalAccessToken")] UserDefaultsViewModel vm)
+        public async Task<ActionResult> EditDefaults([Bind(Include = "UserId,CreateVSTSProject,CreateDevTestLab,CreateEnvironments,CreateBuildAndReleaseProcess,CommitSampleProject,ResourceGroupLocation,DefaultSubscription,GitHubPersonalAccessToken")] UserDefaultsViewModel vm)
         {
             if (ModelState.IsValid)
             {
@@ -64,6 +73,7 @@ namespace Xekina.Controllers
                     u.CreateVSTSProject = vm.CreateVSTSProject;
                     u.ResourceGroupLocation = vm.ResourceGroupLocation;
                     u.GitHubPersonalAccessToken = vm.GitHubPersonalAccessToken;
+                    u.DefaultSubscription = vm.DefaultSubscription;
                    
                 }
                 else
