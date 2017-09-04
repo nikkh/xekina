@@ -731,7 +731,7 @@ namespace VSTS_Spike
             Log("Lab will be created in " + parameters.ResourceGroupLocation);
             parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath");
             parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
-            // TODO: Get this from app.settings
+            
             parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
             parameters.ClientId = CloudConfigurationManager.GetSetting("ClientId");
             parameters.ClientSecret = CloudConfigurationManager.GetSetting("ClientSecret");
