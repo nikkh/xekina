@@ -1,4 +1,4 @@
-﻿@model Xekina.Data.Models.Request
+﻿@model Xekina.ViewModels.RequestViewModel
 
 @{
     ViewBag.Title = "Create";
@@ -31,19 +31,19 @@
             </div>
         </div>
 
+       
+
         <div class="form-group">
             @Html.LabelFor(model => model.SubscriptionId, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.EditorFor(model => model.SubscriptionId, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.SubscriptionId, "", new { @class = "text-danger" })
+                @Html.DropDownListFor(model => model.SubscriptionId, Model.SubscriptionIdSelectList, new { @class = "form-control" })
             </div>
         </div>
 
         <div class="form-group">
             @Html.LabelFor(model => model.ResourceGroupLocation, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.EditorFor(model => model.ResourceGroupLocation, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.ResourceGroupLocation, "", new { @class = "text-danger" })
+                @Html.DropDownListFor(model => model.ResourceGroupLocation, Model.ResourceGroupLocationSelectList, new { @class = "form-control" })
             </div>
         </div>
 
@@ -58,7 +58,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.RequestedBy, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.EditorFor(model => model.RequestedBy, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.EditorFor(model => model.RequestedBy, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
                 @Html.ValidationMessageFor(model => model.RequestedBy, "", new { @class = "text-danger" })
             </div>
         </div>
@@ -66,7 +66,7 @@
         <div class="form-group">
             @Html.LabelFor(model => model.Status, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.EnumDropDownListFor(model => model.Status, htmlAttributes: new { @class = "form-control" })
+                @Html.EnumDropDownListFor(model => model.Status, htmlAttributes: new { @class = "form-control", @readonly = "readonly" })
                 @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
             </div>
         </div>

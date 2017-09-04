@@ -56,6 +56,13 @@ namespace XekinaEngine
             Global.VstsPersonalAccesstoken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
             Global.VstsCollectionUri = CloudConfigurationManager.GetSetting("VstsCollectionUri");
             Global.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
+
+            Global.VstsProjectProcessTemplateId = CloudConfigurationManager.GetSetting("VstsProjectProcessTemplateId");
+            if (Global.VstsProjectProcessTemplateId == null)
+            {
+                throw new XekinaEngineConfigurationException("VstsProjectProcessTemplateId is not set in configuration");
+            }
+
             TraceHelper.TraceInformation("Secrets retrieved from KeyVault");
 
             var host = new JobHost(new JobHostConfiguration

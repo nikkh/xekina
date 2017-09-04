@@ -14,6 +14,8 @@ using Xekina.Data;
 using Xekina.Data.Messages;
 using Xekina.Data.Models;
 using System.Linq;
+using Xekina.ViewModels;
+using System.Collections.Generic;
 
 namespace Xekina.Controllers
 {
@@ -53,9 +55,36 @@ namespace Xekina.Controllers
         }
 
         // GET: Requests/Create
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
-            return View();
+            RequestViewModel vm = new RequestViewModel();
+            vm.RequestedBy = User.Identity.Name;
+            vm.DateRequested = System.DateTimeOffset.Now;
+            
+            UserDefaults userDefaults;
+            using (XekinaWebContext context = new XekinaWebContext())
+            {
+                userDefaults = await db.UserDefaults.FindAsync(User.Identity.Name);
+            }
+            bool selected;
+            Dictionary<String, String> locations = await new Helpers().GetResourceLocationsForUserSubscriptions();
+            foreach (var location in locations)
+            {
+                selected = false;
+                if (location.Value == userDefaults.ResourceGroupLocation) selected = true;
+                vm.ResourceGroupLocationSelectList.Add(new SelectListItem { Text = location.Value, Value = location.Value, Selected=selected });
+                
+            }
+
+            var subscriptions = await new Helpers().GetSubscriptionsForUser();
+            selected = true;
+            foreach (var subscription in subscriptions)
+            {
+                vm.SubscriptionIdSelectList.Add(new SelectListItem { Text = subscription.SubscriptionName, Value = subscription.SubscriptionId, Selected = selected });
+                selected = false;
+            }
+
+            return View(vm);
         }
 
         // POST: Requests/Create

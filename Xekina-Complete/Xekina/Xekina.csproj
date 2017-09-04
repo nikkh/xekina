@@ -236,6 +236,7 @@
     <Compile Include="RedisConnectionHelper.cs" />
     <Compile Include="RestApi.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="ViewModels\RequestViewModel.cs" />
     <Compile Include="ViewModels\UserDefaultsViewModel.cs" />
     <Compile Include="ViewModels\UserSubscriptionViewModel.cs" />
   </ItemGroup>

@@ -11,5 +11,6 @@ namespace XekinaEngine
         public static string VstsPersonalAccesstoken { get; set; }
         public static string VstsCollectionUri { get; set; }
         public static string GitHubPersonalAccessToken { get; set; }
+        public static string VstsProjectProcessTemplateId { get; set; }
     }
 }
