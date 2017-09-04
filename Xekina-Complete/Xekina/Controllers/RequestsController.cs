@@ -66,6 +66,7 @@ namespace Xekina.Controllers
             {
                 userDefaults = await db.UserDefaults.FindAsync(User.Identity.Name);
             }
+
             bool selected;
             Dictionary<String, String> locations = await new Helpers().GetResourceLocationsForUserSubscriptions();
             foreach (var location in locations)
@@ -73,15 +74,16 @@ namespace Xekina.Controllers
                 selected = false;
                 if (location.Value == userDefaults.ResourceGroupLocation) selected = true;
                 vm.ResourceGroupLocationSelectList.Add(new SelectListItem { Text = location.Value, Value = location.Value, Selected=selected });
-                
             }
 
             var subscriptions = await new Helpers().GetSubscriptionsForUser();
             selected = true;
             foreach (var subscription in subscriptions)
             {
-                vm.SubscriptionIdSelectList.Add(new SelectListItem { Text = subscription.SubscriptionName, Value = subscription.SubscriptionId, Selected = selected });
                 selected = false;
+                if (subscription.SubscriptionId == userDefaults.DefaultSubscription) selected = true;
+                vm.SubscriptionIdSelectList.Add(new SelectListItem { Text = subscription.SubscriptionName, Value = subscription.SubscriptionId, Selected = selected });
+                
             }
 
             return View(vm);
