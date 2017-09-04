@@ -8,9 +8,10 @@ namespace XekinaEngine
 {
     public static class Global
     {
-        public static string VstsPersonalAccesstoken { get; set; }
+        public static string VstsPersonalAccessToken { get; set; }
         public static string VstsCollectionUri { get; set; }
         public static string GitHubPersonalAccessToken { get; set; }
         public static string VstsProjectProcessTemplateId { get; set; }
+        public static string VstsCollectionUriRelease { get; set; }
     }
 }

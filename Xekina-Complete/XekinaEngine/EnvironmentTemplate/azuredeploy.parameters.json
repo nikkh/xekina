@@ -1,0 +1,24 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "value": "dummy"
+    },
+    "environmentName": {
+      "value": "dummy"
+    },
+    "skuName": {
+      "value": "dummy"
+    },
+    "administratorLogin": {
+      "value": "dummy"
+    },
+    "administratorLoginPassword": {
+      "value": "GEN-PASSWORD"
+    },
+    "databaseName": {
+      "value": "dummy"
+    }
+  }
+}

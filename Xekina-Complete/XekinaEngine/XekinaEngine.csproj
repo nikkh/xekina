@@ -241,6 +241,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Engine.cs" />
+    <Compile Include="EnvironmentTemplateParameters.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Functions.cs" />
@@ -253,6 +254,18 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="EnvironmentTemplate\azuredeploy.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="EnvironmentTemplate\azuredeploy.parameters.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="JsonSnippets\ArtifactDefinition.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="JsonSnippets\Release-Environment-eliot.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\xekina-engine - Web Deploy.pubxml" />
     <None Include="Properties\webjob-publish-settings.json" />
@@ -261,6 +274,10 @@
     <Folder Include="App_Data\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DeploymentHelper\DeploymentHelper.csproj">
+      <Project>{26e478a4-e971-4614-ac67-4742727e48fb}</Project>
+      <Name>DeploymentHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XekinaData\XekinaData.csproj">
       <Project>{d1c6b8ea-2ea6-468a-a4c9-88f7113c8a93}</Project>
       <Name>XekinaData</Name>

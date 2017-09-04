@@ -21,6 +21,7 @@ namespace DeploymentHelper
     /// </summary>
     public class Deployer
     {
+        //TODO: Ensure logging is compatible/consistent with Engine
         public DeployerParameters Parameters {get; set;}
 
         public Deployer(DeployerParameters parameters)
@@ -31,8 +32,6 @@ namespace DeploymentHelper
         {
             // Try to obtain the service credentials
             var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(Parameters.TenantId, Parameters.ClientId, Parameters.ClientSecret);
-
-           
 
             // Read the template and parameter file contents
             JObject templateFileContents = GetJsonFileContents(Parameters.PathToTemplateFile);
@@ -71,7 +70,7 @@ namespace DeploymentHelper
             
             var ResourceGroup = resourceManagementClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
         }
-
+        // TODO: Refactor to use Joject.Parse()
         private JObject GetJsonStringContents(string jsonString)
         {
             JObject json = new JObject();

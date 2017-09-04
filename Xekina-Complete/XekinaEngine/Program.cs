@@ -53,7 +53,7 @@ namespace XekinaEngine
             string dashboardConnectionString = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("AzureWebJobsDashboardConnectionStringKvUri")).Result.Value;
             TraceHelper.TraceVerbose("Retrieved connection strings");
 
-            Global.VstsPersonalAccesstoken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
+            Global.VstsPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
             Global.VstsCollectionUri = CloudConfigurationManager.GetSetting("VstsCollectionUri");
             Global.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
 
@@ -61,6 +61,12 @@ namespace XekinaEngine
             if (Global.VstsProjectProcessTemplateId == null)
             {
                 throw new XekinaEngineConfigurationException("VstsProjectProcessTemplateId is not set in configuration");
+            }
+
+            Global.VstsCollectionUriRelease = CloudConfigurationManager.GetSetting("VstsCollectionUriRelease");
+            if (Global.VstsCollectionUriRelease == null)
+            {
+                throw new XekinaEngineConfigurationException("VstsCollectionUriRelease is not set in configuration");
             }
 
             TraceHelper.TraceInformation("Secrets retrieved from KeyVault");
