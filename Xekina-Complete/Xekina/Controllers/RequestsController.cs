@@ -16,9 +16,12 @@ using Xekina.Data.Models;
 using System.Linq;
 using Xekina.ViewModels;
 using System.Collections.Generic;
+using System.Collections;
+using PagedList;
 
 namespace Xekina.Controllers
 {
+    [Authorize]
     public class RequestsController : Controller
     {
         KeyVaultClient keyVaultClient;
@@ -31,9 +34,14 @@ namespace Xekina.Controllers
         }
         
         // GET: Requests
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(int? page)
         {
-            return View(await db.Requests.ToListAsync());
+            int pageSize;
+            int.TryParse(CloudConfigurationManager.GetSetting("DefaultPageSize"), out pageSize);
+            if (pageSize == 0) pageSize = 8;
+            int pageNumber = (page ?? 1);
+            List<Request> requests = await db.Requests.ToListAsync();
+            return View(requests.ToPagedList(pageNumber, pageSize));
         }
 
       

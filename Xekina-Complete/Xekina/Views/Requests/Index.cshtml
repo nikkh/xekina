@@ -1,4 +1,6 @@
-﻿@model IEnumerable<Xekina.Data.Models.Request>
+﻿
+@model PagedList.IPagedList<Xekina.Data.Models.Request>
+@using PagedList.Mvc;
 
 @{
     ViewBag.Title = "Index";
@@ -12,25 +14,25 @@
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.ProjectName)
+            @Html.DisplayNameFor(model => model.First().ProjectName)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.ProjectDescription)
+            @Html.DisplayNameFor(model => model.First().ProjectDescription)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.SubscriptionId)
+            @Html.DisplayNameFor(model => model.First().SubscriptionId)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.ResourceGroupLocation)
+            @Html.DisplayNameFor(model => model.First().ResourceGroupLocation)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.DateRequested)
+            @Html.DisplayNameFor(model => model.First().DateRequested)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.RequestedBy)
+            @Html.DisplayNameFor(model => model.First().RequestedBy)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Status)
+            @Html.DisplayNameFor(model => model.First().Status)
         </th>
         <th></th>
     </tr>
@@ -68,3 +70,7 @@
 
 </table>
 
+<br />
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+@Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+<br />

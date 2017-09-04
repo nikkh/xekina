@@ -9,6 +9,10 @@ namespace Xekina.ViewModels
 {
     public class RequestViewModel
     {
+        private string _formattedRequestDate="";
+        private string _formattedRequestTime="";
+        private DateTimeOffset _dateRequested;
+
         public RequestViewModel()
         {
             ResourceGroupLocationSelectList = new List<SelectListItem>();
@@ -21,9 +25,19 @@ namespace Xekina.ViewModels
         public List<SelectListItem> SubscriptionIdSelectList { get; set; }
         public string ResourceGroupLocation { get; set; }
         public List<SelectListItem> ResourceGroupLocationSelectList { get; set; }
-        public DateTimeOffset DateRequested { get; set; }
+        public DateTimeOffset DateRequested {
+            get { return _dateRequested; }
+            set
+            {
+                _dateRequested = value;
+                _formattedRequestDate = DateRequested.LocalDateTime.ToShortDateString();
+                _formattedRequestTime = DateRequested.LocalDateTime.ToShortTimeString();
+            }
+        }
         public string RequestedBy { get; set; }
         public RequestStatus Status { get; set; }
+        public string FormattedRequestDate { get { return _formattedRequestDate; } }
+        public string FormattedRequestTime { get { return _formattedRequestTime; } }
 
         public static explicit operator Request(RequestViewModel r)
         {
