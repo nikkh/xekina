@@ -71,21 +71,19 @@
 <h2>Progress Logs</h2>
 <table class="table">
 <tr>
-    <th>Started</th>
+    <th>Event Time</th>
     <th>Phase</th>
     <th>Headline Activity</th>
-    <th>Finish</th>
     <th>Status</th>
     <th>Data</th>
     <th>Exception</th>
 </tr>
-@foreach (var item in Model.RequestLogs.OrderBy(i=>i.Start))
+@foreach (var item in Model.RequestLogs.OrderBy(i=>i.EventTime))
 {
     <tr>
-        <td>@item.Start</td>
+        <td>@item.EventTime</td>
         <td>@item.Phase</td>
         <td>@item.HeadlineActivity</td>
-        <td>@item.Finish</td>
         <td>@item.Status</td>
         <td>@item.Data</td>
         <td>@item.Exception</td>

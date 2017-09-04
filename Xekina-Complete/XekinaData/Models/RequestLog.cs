@@ -13,9 +13,7 @@ namespace Xekina.Data.Models
         public string Data { get; set; }
 
         public RequestPhase Phase { get; set; }
-        public DateTimeOffset Start { get; set; }
-        public DateTimeOffset Finish { get; set; }
-
+        public DateTimeOffset EventTime { get; set; }
         public RequestStatus Status { get; set; }
         public string HeadlineActivity { get; set; }
         public String Exception { get; set;}

@@ -96,16 +96,13 @@ namespace XekinaEngine
         {
             log.WriteLine("write audit record");
             // TODO: Redesign this - start and finish on the same record?
-            Random rnd = new Random();
+
             RequestLog requestLog = new RequestLog();
             
             requestLog.Status = status;
             requestLog.HeadlineActivity = headlineActivity;
-            
             requestLog.Phase = phase;
-            requestLog.Start = System.DateTimeOffset.Now;
-            Thread.Sleep(rnd.Next(1, 5000));
-            requestLog.Finish = System.DateTimeOffset.Now;
+            requestLog.EventTime = System.DateTimeOffset.Now;
             requestLog.Data = data;
             using (context = new XekinaWebContext())
             {
