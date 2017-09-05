@@ -244,6 +244,7 @@
     <Compile Include="Engine.cs" />
     <Compile Include="EnvironmentTemplateParameters.cs" />
     <Compile Include="Global.cs" />
+    <Compile Include="LabTemplateParameters.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -266,6 +267,12 @@
     </None>
     <None Include="JsonSnippets\Release-Environment-eliot.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="LabTemplate\azuredeploy.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="LabTemplate\azuredeploy.parameters.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\xekina-engine - Web Deploy.pubxml" />

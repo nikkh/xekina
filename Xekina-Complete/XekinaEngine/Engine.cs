@@ -111,13 +111,60 @@ namespace XekinaEngine
             }
             WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.SampleProject, "Commit sample project", String.Format("Completed commit of sample project for project {0}", request.ProjectName));
 
-            // TODO Finish off creation of  DTLab 
+            WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.DTLab, "Create Dev/Test Lab", String.Format("Creating Dev/Test Lab for project {0}", request.ProjectName));
+            result = CreateDevTestLab(request.ProjectName, request.ResourceGroupLocation, request.SubscriptionId);
+            if (!result)
+            {
+                WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "Request aborted", request.ProjectName);
+                WriteLog(String.Format("Unable to create dev/test lab for project {0}", request.ProjectName));
+                return;
+            }
+            WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.DTLab, "Create Dev/Test Lab", String.Format("Done. Dev/Test Lab created for project {0}", request.ProjectName));
+            // All done! 
             WriteAuditRecord(request.RequestID, RequestStatus.Completed, RequestPhase.Complete, "Project created sucessfully", request.ProjectName);
         }
         #endregion
 
         #region business logic
+        private bool CreateDevTestLab(string projectName, string resourceGroupLocation, string subscriptionId)
+        {
+            WriteLog("Dev Test Lab Creation Phase is starting");
+            WriteLog(String.Format("Creating Lab for project {0}", projectName));
 
+            DeployerParameters parameters = new DeployerParameters();
+            parameters.SubscriptionId = subscriptionId;
+            WriteLog("SubscriptionId = " + parameters.SubscriptionId);
+            parameters.ResourceGroupName = string.Format("{0}-{1}", projectName, "lab");
+            WriteLog("Lab resource group is " + parameters.ResourceGroupName);
+            parameters.DeploymentName = string.Format("{0}-{1}-{2}", projectName, "lab", "deployment");
+            WriteLog("Deployment will be called " + parameters.DeploymentName);
+            parameters.ResourceGroupLocation = resourceGroupLocation;
+            WriteLog("Lab will be created in " + parameters.ResourceGroupLocation);
+            parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("LabTemplateFilePath");
+            parameters.PathToParameterFile = CloudConfigurationManager.GetSetting("LabTemplateParameterFilePath");
+
+            parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+            parameters.ClientId = CloudConfigurationManager.GetSetting("ida:ClientId");
+            parameters.ClientSecret = CloudConfigurationManager.GetSetting("ida:ClientSecret");
+
+            string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
+            LabTemplateParameters labParameters = JsonConvert.DeserializeObject<LabTemplateParameters>(templateParameters);
+            labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "lab");
+            labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
+            labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "repo");
+            labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
+            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
+            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+            labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
+            labParameters.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
+            parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
+            Deployer deployer = new Deployer(parameters);
+            deployer.Deploy().SyncResult();
+            WriteLog("End of Dev Test Lab Creation Phase.");
+            return true;
+        }
         private bool CommitSampleProject(string projectName)
         {
             VssConnection connection = GetVssConnection();
@@ -345,6 +392,35 @@ namespace XekinaEngine
             parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();
+            // TODO This failed with an error - maximum number of free server farms...  need to catch these.
+            /* 
+             "{
+                  "Code": "Conflict",
+                  "Message": "The maximum number of Free ServerFarms allowed in a Subscription is 10.",
+                  "Target": null,
+                  "Details": [
+                    {
+                      "Message": "The maximum number of Free ServerFarms allowed in a Subscription is 10."
+                    },
+                    {
+                      "Code": "Conflict"
+                    },
+                    {
+                      "ErrorEntity": {
+                        "ExtendedCode": "59301",
+                        "MessageTemplate": "The maximum number of {0} ServerFarms allowed in a Subscription is {1}.",
+                        "Parameters": [
+                          "Free",
+                          "10"
+                        ],
+                        "Code": "Conflict",
+                        "Message": "The maximum number of Free ServerFarms allowed in a Subscription is 10."
+                      }
+                    }
+                  ],
+                  "Innererror": null
+                }"
+             */
             return true;
         }
         private bool CreateBuildAndReleaseProcess(string projectName, string subscriptionId)
