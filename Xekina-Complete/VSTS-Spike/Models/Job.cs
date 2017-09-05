@@ -9,6 +9,7 @@ namespace Xekina.Models
     public class Job
     {
         public string ResourceGroupLocation { get; set; }
+
         public XekinaTemplate XekinaTemplate { get; set; }
     }
 }

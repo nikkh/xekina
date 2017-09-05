@@ -23,6 +23,8 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using DeploymentHelper;
+using Microsoft.TeamFoundation.SourceControl.WebApi;
+using System.IO.Compression;
 
 namespace XekinaEngine
 {
@@ -99,14 +101,220 @@ namespace XekinaEngine
             }
             WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.VSTS, "CI/CD Processes", String.Format("Creation of build and release processes for project {0} has completed", request.ProjectName));
 
-            // TODO Finish off creation of  DTLab and Check in sample project.
-            WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.SampleProject, "Check in sample project", request.ProjectName);
+            WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.SampleProject, "Commit sample project", String.Format("Commit sample project has started for project {0}", request.ProjectName));
+            result = CommitSampleProject(request.ProjectName);
+            if (!result)
+            {
+                WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "Request aborted", request.ProjectName);
+                WriteLog(String.Format("Unable to create build and release processes for project {0}", request.ProjectName));
+                return;
+            }
+            WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.SampleProject, "Commit sample project", String.Format("Completed commit of sample project for project {0}", request.ProjectName));
+
+            // TODO Finish off creation of  DTLab 
             WriteAuditRecord(request.RequestID, RequestStatus.Completed, RequestPhase.Complete, "Project created sucessfully", request.ProjectName);
         }
         #endregion
 
         #region business logic
 
+        private bool CommitSampleProject(string projectName)
+        {
+            VssConnection connection = GetVssConnection();
+            GitHttpClient gitClient = connection.GetClient<GitHttpClient>();
+            var repo = gitClient.GetRepositoryAsync(projectName, projectName).Result;
+            //GitRef defaultBranch = gitClient.GetRefsAsync(repo.Id).Result.First();
+            List<GitChange> gChanges = new List<GitChange>();
+            // next, craft the branch and commit that we'll push
+
+            GitRefUpdate newBranch = new GitRefUpdate()
+            {
+                Name = $"refs/heads/master",
+                OldObjectId = new string('0', 40)
+
+            };
+            // TODO: Parameterize
+            string url = "https://api.github.com/repos/nikkh/xekina/zipball/master";
+
+            HttpMethod method = HttpMethod.Get;
+
+            string body = "";
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("https://api.github.com/");
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+                // TODO: This needs to be a user specific set of Git settings.
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
+                  Convert.ToBase64String(
+                      System.Text.ASCIIEncoding.ASCII.GetBytes(
+                          string.Format("{0}:{1}", "token", Global.GitHubPersonalAccessToken))));
+                client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("Mozilla", "5.0"));
+                var requestUri = url; ;
+                var request = new HttpRequestMessage(method, requestUri);
+                // Setup header(s)
+                request.Headers.Add("Accept", "application/json");
+
+                // Add body content
+                if (method == HttpMethod.Post)
+                {
+                    request.Content = new StringContent(
+                        body,
+                        Encoding.UTF8,
+                        "application/json"
+                    );
+                }
+
+                // Send the request
+                using (HttpResponseMessage response = client.SendAsync(request).Result)
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new Exception("Error making Api call!");
+                    }
+                    using (Stream responseStream = response.Content.ReadAsStreamAsync().Result)
+                    {
+
+                        using (ZipArchive archive = new ZipArchive(responseStream, ZipArchiveMode.Read))
+                        {
+                            if (archive.Entries.Count == 0)
+                            {
+                                Console.WriteLine("There were no entries in archive!");
+                            }
+                            // TODO parameterise
+                            foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample/XekinaWebApp") && (!String.IsNullOrEmpty(e.Name))))
+                            {
+                                Console.WriteLine("{0} was discovered in the archive", entry.FullName);
+                                if (entry.Name.Contains(".sln"))
+                                {
+                                    WriteLog("Solution " + entry.Name + "was identified");
+                                }
+                                string outputPath = GetOutputPath(entry.FullName);
+                                string content = null;
+                                using (StreamReader reader = new StreamReader(entry.Open()))
+                                {
+                                    content = reader.ReadToEnd();
+                                    Console.WriteLine();
+                                }
+                                if (entry.FullName.Contains("Views/Home/Index.cshtml"))
+                                {
+                                    string newContent = content.Replace("#Name_Placeholder#", projectName);
+                                    content = newContent;
+                                }
+                                GitChange change = new GitChange()
+                                {
+                                    ChangeType = VersionControlChangeType.Add,
+                                    Item = new GitItem() { Path = $"{outputPath}" },
+                                    NewContent = new ItemContent()
+                                    {
+                                        ContentType = ItemContentType.RawText,
+                                        Content = content
+                                    }
+
+                                };
+
+                                gChanges.Add(change);
+
+                            }
+
+                            foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample.sln")))
+                            {
+                                Console.WriteLine("{0} was discovered in the archive", entry.FullName);
+                                string outputPath = GetOutputPath(entry.FullName);
+                                string content = null;
+                                using (StreamReader reader = new StreamReader(entry.Open()))
+                                {
+                                    content = reader.ReadToEnd();
+                                    Console.WriteLine();
+                                }
+
+                                GitChange change = new GitChange()
+                                {
+                                    ChangeType = VersionControlChangeType.Add,
+                                    Item = new GitItem() { Path = $"{outputPath}" },
+                                    NewContent = new ItemContent()
+                                    {
+
+
+                                        ContentType = ItemContentType.RawText,
+                                        Content = content
+                                    }
+
+
+                                };
+
+                                gChanges.Add(change);
+
+                            }
+
+
+
+                        }
+                    }
+                    // responseBody = response.Content.ReadAsStringAsync().Result;
+                    WriteLog(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
+
+                }
+
+
+            }
+
+
+
+            // Insert a readme.md
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("# Welcome to " + projectName + "!");
+            sb.AppendLine();
+            sb.AppendLine("This project was autogenerated for you by Xekina.  You should find you have:");
+            sb.AppendLine();
+            sb.AppendLine("* This VSTS project");
+            sb.AppendLine("* A Git repository with the same name as your project");
+            sb.AppendLine("* A Sample Project");
+            sb.AppendLine("* A Build Process with CI");
+            sb.AppendLine("* A Release Process with CD");
+            sb.AppendLine("* A DevTest Lab to use for development machines");
+            sb.AppendLine("* A Test and production App Service Web Apps linked to the release process");
+            sb.AppendLine();
+            sb.AppendFormat("[https://{0}-dev-web.azurewebsites.net](https://{0}-dev-web.azurewebsites.net)", projectName);
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendFormat("[https://{0}-prod-web.azurewebsites.net](https://{0}-prod-web.azurewebsites.net)", projectName);
+            sb.AppendLine();
+            GitChange readme = new GitChange()
+            {
+                ChangeType = VersionControlChangeType.Add,
+                Item = new GitItem() { Path = $"readme.md" },
+                NewContent = new ItemContent()
+
+                {
+
+                    Content = sb.ToString(),
+
+                    ContentType = ItemContentType.RawText,
+
+                },
+
+
+            };
+
+            gChanges.Add(readme);
+
+
+
+            GitCommitRef newCommit = new GitCommitRef()
+            {
+                Comment = "Initial commit created by xekina",
+                Changes = gChanges
+            };
+
+            // create the push with the new branch and commit
+            GitPush push = gitClient.CreatePushAsync(new GitPush()
+            {
+                RefUpdates = new GitRefUpdate[] { newBranch },
+                Commits = new GitCommitRef[] { newCommit },
+            }, repo.Id).Result;
+            return true;
+        }
         private bool CreateEnvironment(string projectName, string environment, string resourceGroupLocation, string subscriptionId)
         {
             string environmentHostingPlanSku = CloudConfigurationManager.GetSetting(string.Format("HostingPlanSkuName{0}", environment));
@@ -139,7 +347,6 @@ namespace XekinaEngine
             deployer.Deploy().SyncResult();
             return true;
         }
-
         private bool CreateBuildAndReleaseProcess(string projectName, string subscriptionId)
         {
 
@@ -374,7 +581,6 @@ namespace XekinaEngine
             }
             return new JObject(releaseDefinitionTemplate);
         }
-
         public bool CreateProject(string projectName, string projectDescription)
         {
             WriteLog("Engine.CreateProject method invoked");
@@ -435,7 +641,6 @@ namespace XekinaEngine
 
             return true;
         }
-
         private bool CreateProjectStructure(string projectName)
         {
             ProjectHttpClient projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
@@ -577,6 +782,24 @@ namespace XekinaEngine
             VssCredentials creds = new VssClientCredentials();
             creds.Storage = new VssClientCredentialStorage();
             return new VssConnection(new Uri(Global.VstsCollectionUri), new VssBasicCredential(string.Empty, Global.VstsPersonalAccessToken));
+        }
+        private static string GetOutputPath(string fullName)
+        {
+            
+            // TODO: parameterise the name and location (possibly branch?) of the sample project and 
+            // then read the contents from the .csproj file?
+            string outputPath = null;
+            if (fullName.Contains("XekinaSample.sln"))
+            {
+                outputPath = "XekinaSample.sln";
+            }
+            else
+            {
+                var startIndex = fullName.IndexOf("XekinaWebApp");
+                int length = fullName.Length - startIndex + 1;
+                outputPath = fullName.Substring(startIndex);
+            }
+            return outputPath;
         }
         // TODO: If needed, you can do this with JObject.Parse()...
         private static JObject GetJsonStringContents(string jsonString)
