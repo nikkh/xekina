@@ -14,7 +14,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SettingsFiles", "SettingsFiles", "{63D66FFE-C8A7-42F2-89F3-A87633BCC6F1}"
 	ProjectSection(SolutionItems) = preProject
 		..\..\..\..\Dropbox\Settings Files\xekina.engine.settings.config = ..\..\..\..\Dropbox\Settings Files\xekina.engine.settings.config
-		..\..\..\..\Dropbox\Settings Files\xekina.settings.config = ..\..\..\..\Dropbox\Settings Files\xekina.settings.config
 		..\..\..\..\Dropbox\Settings Files\xekina.web.settings.config = ..\..\..\..\Dropbox\Settings Files\xekina.web.settings.config
 	EndProjectSection
 EndProject

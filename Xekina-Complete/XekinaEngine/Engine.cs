@@ -152,13 +152,12 @@ namespace XekinaEngine
             labParameters.parameters.newLabName.value = String.Format("{0}-{1}", projectName.ToLower(), "lab");
             labParameters.parameters.artifactRepoBranch.value = CloudConfigurationManager.GetSetting("ArtifactRepoBranch");
             labParameters.parameters.artifactRepoDisplayName.value = String.Format("{0}-{1}", projectName.ToLower(), "repo");
-            labParameters.parameters.artifactRepoSecurityToken.value = CloudConfigurationManager.GetSetting("ArtifactRepoSecurityToken");
+            labParameters.parameters.artifactRepoSecurityToken.value = Global.ArtifactRepoSecurityToken;
             labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
             labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-            labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
-            labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
+           
             labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
-            labParameters.parameters.password.value = CloudConfigurationManager.GetSetting("LabVMPassword");
+            labParameters.parameters.password.value = Global.DefaultLabAdminPassword;
             parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();
@@ -366,7 +365,7 @@ namespace XekinaEngine
         {
             string environmentHostingPlanSku = CloudConfigurationManager.GetSetting(string.Format("HostingPlanSkuName{0}", environment));
             DeployerParameters parameters = new DeployerParameters();
-            Console.WriteLine("Creating environment " + environment);
+            WriteLog("Creating environment " + environment);
             parameters.ResourceGroupName = String.Format("{0}-{1}", projectName, environment).ToLower();
             parameters.DeploymentName = String.Format("{0}-{1}-deployment", projectName, environment).ToLower();
             parameters.PathToTemplateFile = CloudConfigurationManager.GetSetting("EnvTemplateFilePath");
@@ -388,7 +387,7 @@ namespace XekinaEngine
             envParameters.parameters.skuName.value = environmentHostingPlanSku;
             envParameters.parameters.administratorLogin.value = CloudConfigurationManager.GetSetting("EnvSQLAdmin");
             // TODO:Move this to Key Vault
-            envParameters.parameters.administratorLoginPassword.value = CloudConfigurationManager.GetSetting("EnvSQLAdminPassword");
+            envParameters.parameters.administratorLoginPassword.value = Global.DefaultSQLAdminPassword;
             parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
             Deployer deployer = new Deployer(parameters);
             deployer.Deploy().SyncResult();
@@ -600,7 +599,7 @@ namespace XekinaEngine
             }
             return JObject.Parse(responseBody);
         }
-        private static JObject GetBuildDefinitionTemplate(string UrlBase, string projectName, string VstsPersonalAccessToken, string templateId)
+        private JObject GetBuildDefinitionTemplate(string UrlBase, string projectName, string VstsPersonalAccessToken, string templateId)
         {
             string responseBody = "";
             JObject buildDefinitionTemplate = null;
@@ -622,13 +621,13 @@ namespace XekinaEngine
                 {
                     response.EnsureSuccessStatusCode();
                     responseBody = response.Content.ReadAsStringAsync().Result;
-                    Console.WriteLine(responseBody);
+                    WriteLog(responseBody);
                 }
                 buildDefinitionTemplate = GetJsonStringContents(responseBody);
             }
             return new JObject(buildDefinitionTemplate["template"].Children());
         }
-        private static JObject GetReleaseDefinitionTemplate(string UrlBase, string projectName, string templateId)
+        private JObject GetReleaseDefinitionTemplate(string UrlBase, string projectName, string templateId)
         {
             string responseBody = "";
             JObject releaseDefinitionTemplate = null;
@@ -651,7 +650,7 @@ namespace XekinaEngine
                 {
                     response.EnsureSuccessStatusCode();
                     responseBody = response.Content.ReadAsStringAsync().Result;
-                    Console.WriteLine(responseBody);
+                    WriteLog(responseBody);
                 }
                 releaseDefinitionTemplate = GetJsonStringContents(responseBody);
             }

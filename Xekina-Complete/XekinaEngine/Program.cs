@@ -56,6 +56,13 @@ namespace XekinaEngine
             Global.VstsPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("VstsPersonalAccessTokenKeyVaultUri")).Result.Value;
             Global.VstsCollectionUri = CloudConfigurationManager.GetSetting("VstsCollectionUri");
             Global.GitHubPersonalAccessToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("GitHubPersonalAccessTokenKeyVaultUri")).Result.Value;
+            Global.ArtifactRepoSecurityToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("ArtifactRepoSecurityTokenKvUri")).Result.Value;
+            Global.DefaultLabAdminPassword = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("DefaultLabAdminPasswordKvUri")).Result.Value;
+            Global.DefaultSQLAdminPassword = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("DefaultSQLAdminPasswordKvUri")).Result.Value;
+
+            
+
+
 
             Global.VstsProjectProcessTemplateId = CloudConfigurationManager.GetSetting("VstsProjectProcessTemplateId");
             if (Global.VstsProjectProcessTemplateId == null)
@@ -66,6 +73,7 @@ namespace XekinaEngine
             Global.VstsCollectionUriRelease = CloudConfigurationManager.GetSetting("VstsCollectionUriRelease");
             if (Global.VstsCollectionUriRelease == null)
             {
+                TraceHelper.TraceError("VstsCollectionUriRelease is not set in configuration");
                 throw new XekinaEngineConfigurationException("VstsCollectionUriRelease is not set in configuration");
             }
 
