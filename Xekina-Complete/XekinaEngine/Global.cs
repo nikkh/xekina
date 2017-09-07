@@ -16,5 +16,8 @@ namespace XekinaEngine
         public static string DefaultSQLAdminPassword { get; set; }
         public static string DefaultLabAdminPassword { get; set; }
         public static string ArtifactRepoSecurityToken { get; set; }
+        public static string TenantId { get; internal set; }
+        public static string ClientId { get; internal set; }
+        public static string ClientSecret { get; internal set; }
     }
 }

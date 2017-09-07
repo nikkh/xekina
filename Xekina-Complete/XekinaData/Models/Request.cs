@@ -22,5 +22,5 @@ namespace Xekina.Data.Models
 
     }
 
-    public enum RequestStatus { Created, InProgress, Completed, Error }
+    public enum RequestStatus { Created, InProgress, Completed, Error, AwaitingDeletion, Deleted, DeleteInProgress }
 }

@@ -241,6 +241,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthenticationHelpers.cs" />
+    <Compile Include="AzureRestApi.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="EnvironmentTemplateParameters.cs" />
     <Compile Include="Global.cs" />
@@ -251,6 +253,7 @@
     <Compile Include="QueueNameResolver.cs" />
     <Compile Include="TraceHelper.cs" />
     <Compile Include="XekinaEngineConfigurationException.cs" />
+    <Compile Include="XekinaEngineProcessingException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

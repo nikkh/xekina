@@ -25,6 +25,9 @@ using System.Net.Http.Headers;
 using DeploymentHelper;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using System.IO.Compression;
+using System.Reflection;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Net;
 
 namespace XekinaEngine
 {
@@ -51,7 +54,7 @@ namespace XekinaEngine
             WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.Initialize, "Xekina is processing this request", request.ProjectName);
 
             WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.VSTS, "Project Creation", String.Format("Creation of project {0} has started", request.ProjectName));
-            result=CreateProject(request.ProjectName, request.ProjectDescription);
+            result = CreateProject(request.ProjectName, request.ProjectDescription);
             if (!result)
             {
                 WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "Request aborted", request.ProjectName);
@@ -123,6 +126,138 @@ namespace XekinaEngine
             // All done! 
             WriteAuditRecord(request.RequestID, RequestStatus.Completed, RequestPhase.Complete, "Project created sucessfully", request.ProjectName);
         }
+
+        internal void DeleteProjectRequestOrchestrator(Request request)
+        {
+            bool result;
+            TraceHelper.TraceInformation("Processing deletion request for project" + request.ProjectName);
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteVSTSProject", request.ProjectName);
+            result = DeleteVSTSProject(request.ProjectName);
+            if (!result)
+            {
+                WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "DeleteVSTSProject", request.ProjectName);
+                WriteLog(String.Format("Unable to create project structure for project {0}", request.ProjectName));
+                return;
+            }
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteVSTSProject", "Vsts project" + request.ProjectName + "was deleted");
+
+            /// Experimental delete DTL async and queue resource group
+            /// 
+            // TODO... Develop audit and controls around this
+            // TODO:  This is a long running operation.  Could we queue a message to delete rosource groups once the operation has finished?  This would require looking at a 
+            string labName = String.Format("{0}-{1}", request.ProjectName, "lab");
+            string resourceGroupName = String.Format("{0}-{1}", request.ProjectName, "lab");
+            result = DeleteDTL(request.SubscriptionId, resourceGroupName, labName);
+            if (!result)
+            {
+                // TODO Logging
+                return;
+            }
+            // HACK: dont let this go on infinitely...
+            int count = 0;
+            bool labDeleting = true;
+            while (labDeleting)
+            {
+                count++;
+                HttpStatusCode code = GetLabStatus(request.SubscriptionId, resourceGroupName, labName);
+                WriteLog(String.Format("Checking if lab ({0}) is deleted.  Status code is {1} on get request", labName, code));
+                if (code == HttpStatusCode.NotFound) labDeleting = false;
+                if (labDeleting) Thread.Sleep(10000);
+                if (count == 160) throw new Exception("Never got a 404 for Lab delete!");
+            }
+
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteProjectResourceGroups", request.ProjectName);
+            result = DeleteProjectResourceGroups(request.ProjectName, request.SubscriptionId);
+            if (!result)
+            {
+                WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "DeleteProjectResourceGroups", request.ProjectName);
+                WriteLog(String.Format("Unable to create project structure for project {0}", request.ProjectName));
+                return;
+            }
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteProjectResourceGroups", "Resource groups for " + request.ProjectName + "were deleted");
+
+            WriteAuditRecord(request.RequestID, RequestStatus.Deleted, RequestPhase.Complete, "DeleteProjectRequestOrchestrator", "Project " + request.ProjectName + "was deleted");
+        }
+
+        private HttpStatusCode GetLabStatus(string subscriptionId, string resourceGroupName, string labName)
+        {
+            string restfulUrl =
+               String.Format("https://management.azure.com/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.DevTestLab/labs/{2}?api-version=2016-05-15", subscriptionId, resourceGroupName, labName);
+            string token = "";
+            try
+            {
+                token = AuthenticationHelpers.AcquireTokenBySPN(Global.TenantId, Global.ClientId, Global.ClientSecret).Result;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            HttpStatusCode result;
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var requestUri = new Uri(restfulUrl);
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+                // Setup header(s)
+                request.Headers.Add("Accept", "application/json");
+
+                // Send the request
+                HttpResponseMessage response = client.SendAsync(request).Result;
+                result =  response.StatusCode;
+            }
+            return result;
+        }
+
+        private bool DeleteVSTSProject(string projectName)
+        {
+            try
+            {
+                ProjectHttpClient projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
+                var teamProject = projectHttpClient.GetProjects().Result.Where(p => p.Name == projectName).FirstOrDefault();
+                projectHttpClient.QueueDeleteProject(teamProject.Id);
+            }
+            catch (Exception e)
+            {
+                string message = String.Format("{0}, Exception: {1}", e.Message, projectName);
+                TraceHelper.TraceError(message);
+                throw new XekinaEngineProcessingException(message);
+            }
+            return true;
+        }
+        private bool DeleteDTL(string subscriptionId, string resourceGroupName, string labName)
+        {
+            string restfulUrl = 
+                String.Format("https://management.azure.com/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.DevTestLab/labs/{2}?api-version=2016-05-15", subscriptionId, resourceGroupName, labName);
+            var result = AzureRestApi.Invoke(HttpMethod.Delete, restfulUrl);
+
+            return true;
+        }
+        private bool DeleteProjectResourceGroups(string projectName, string subscriptionId)
+        {
+            try
+            {
+                DeployerParameters parameters = new DeployerParameters();
+                parameters.SubscriptionId = subscriptionId;
+                parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
+                parameters.ClientId = CloudConfigurationManager.GetSetting("ida:ClientId");
+                parameters.ClientSecret = CloudConfigurationManager.GetSetting("ida:ClientSecret");
+                Deployer deployer = new Deployer(parameters);
+                WriteLog(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", projectName, "lab", parameters.SubscriptionId));
+                deployer.DeleteResourceGroup(String.Format("{0}-{1}", projectName, "lab"));
+                WriteLog("This will fail because the lab resource groups have locks - need to release them!");
+                WriteLog(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", projectName, "dev", parameters.SubscriptionId));
+                deployer.DeleteResourceGroup(String.Format("{0}-{1}", projectName, "dev"));
+                WriteLog(String.Format("Deleting Resource Group {0}-{1} from subscription {2}", projectName, "prod", parameters.SubscriptionId));
+                deployer.DeleteResourceGroup(String.Format("{0}-{1}", projectName, "prod"));
+            }
+            catch (Exception e)
+            {
+                string message = String.Format("{0}, Exception: {1}", e.Message, projectName);
+                TraceHelper.TraceError(message);
+                throw new XekinaEngineProcessingException(message);
+            }
+            return true;
+        }
         #endregion
 
         #region business logic
@@ -155,7 +290,7 @@ namespace XekinaEngine
             labParameters.parameters.artifactRepoSecurityToken.value = Global.ArtifactRepoSecurityToken;
             labParameters.parameters.artifactRepoUri.value = CloudConfigurationManager.GetSetting("ArtifactRepoUri");
             labParameters.parameters.artifactRepoFolder.value = CloudConfigurationManager.GetSetting("ArtifactRepoFolder");
-           
+
             labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
             labParameters.parameters.password.value = Global.DefaultLabAdminPassword;
             parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
@@ -378,7 +513,7 @@ namespace XekinaEngine
             parameters.TenantId = CloudConfigurationManager.GetSetting("TenantId");
             parameters.ClientId = CloudConfigurationManager.GetSetting("ida:ClientId");
             parameters.ClientSecret = CloudConfigurationManager.GetSetting("ida:ClientSecret");
-           
+
 
             string templateParameters = File.ReadAllText(parameters.PathToParameterFile);
             EnvironmentTemplateParameters envParameters = JsonConvert.DeserializeObject<EnvironmentTemplateParameters>(templateParameters);
@@ -439,7 +574,7 @@ namespace XekinaEngine
             buildDefinition["queue"] = GetQueueJson();
             buildDefinition["description"] = "Generated by Xekina";
             WriteLog(String.Format("Build Template = {0}", JsonConvert.SerializeObject(buildDefinition)));
-            
+
             string tempstr1 = buildDefinition.ToString();
             foreach (var item in buildDefinition["build"])
             {
@@ -473,7 +608,7 @@ namespace XekinaEngine
 
             // This is a constant within the VSTS Account
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
-            JObject releaseDefinition = GetReleaseDefinitionTemplate(Global.VstsCollectionUri, projectName,  releaseTemplateId);
+            JObject releaseDefinition = GetReleaseDefinitionTemplate(Global.VstsCollectionUri, projectName, releaseTemplateId);
             releaseDefinition["name"] = GetReleaseNameJson(projectName);
             releaseDefinition["environments"] = GetReleaseEnvironmentsJson("./JsonSnippets/Release-Environment-eliot.json");
             releaseDefinition["environments"][0] = releaseDefinition["environment"];
@@ -490,7 +625,7 @@ namespace XekinaEngine
             releaseDefinition["artifacts"][0]["type"] = "Build";
             releaseDefinition["artifacts"][0]["alias"] = result["name"];
 
-            
+
 
             releaseDefinition["artifacts"][0]["definitionReference"]["definition"]["id"] = result["id"];
             releaseDefinition["artifacts"][0]["definitionReference"]["definition"]["name"] = result["name"];
@@ -536,18 +671,18 @@ namespace XekinaEngine
             serviceEndpointJson["data"]["subscriptionId"] = subscriptionId;
             serviceEndpointJson["authorization"]["parameters"]["tenantid"] = CloudConfigurationManager.GetSetting("TenantId");
             string body = serviceEndpointJson.ToString();
-            return CallRestApi(HttpMethod.Post, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1", false, body);
+            return CallVstsRestApi(HttpMethod.Post, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1", false, body);
         }
         private string GetServiceEndpoints(string projectName)
         {
-            var response = CallRestApi(HttpMethod.Get, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1");
+            var response = CallVstsRestApi(HttpMethod.Get, projectName, "distributedtask/serviceendpoints?api-version=3.0-preview.1");
             return response.ToString();
 
         }
         private bool IsServiceEndpointReady(string projectName, string endpointId)
         {
             string urlFragment = String.Format("distributedtask/serviceendpoints/{0}?api-version=3.0-preview.1", endpointId);
-            var response = CallRestApi(HttpMethod.Get, projectName, urlFragment);
+            var response = CallVstsRestApi(HttpMethod.Get, projectName, urlFragment);
             if (response["isReady"].ToString() == "True")
             {
                 WriteLog(String.Format("ServiceEndpoint {0} is ready now.", endpointId));
@@ -559,7 +694,7 @@ namespace XekinaEngine
 
         private JObject CreateReleaseProcess(string projectName, JObject releaseDefinition, string VstsPersonalAccessToken)
         {
-            var response = CallRestApi(HttpMethod.Post, projectName, "release/definitions?api-version=3.0-preview.1", true, releaseDefinition.ToString());
+            var response = CallVstsRestApi(HttpMethod.Post, projectName, "release/definitions?api-version=3.0-preview.1", true, releaseDefinition.ToString());
             WriteLog(String.Format("Release Definition {0} created successfully", releaseDefinition["name"]));
             return response;
 
@@ -639,7 +774,7 @@ namespace XekinaEngine
                        System.Text.ASCIIEncoding.ASCII.GetBytes(
                            string.Format("{0}:{1}", "", Global.VstsPersonalAccessToken))));
 
-                
+
                 var requestUri = new Uri(string.Format("{0}/{1}/_apis/release/definitions/environmenttemplates?templateId={2}&api-version=3.0-preview.1", Global.VstsCollectionUriRelease, projectName, templateId));
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
                 // Setup header(s)
@@ -660,12 +795,12 @@ namespace XekinaEngine
         {
             WriteLog("Engine.CreateProject method invoked");
             ProjectHttpClient projectHttpClient = GetVssConnection().GetClient<ProjectHttpClient>();
-            
+
             var newProject = new TeamProject();
             newProject.Name = projectName;
             newProject.Description = projectDescription + " @xekina";
             newProject.Capabilities = new Dictionary<string, Dictionary<string, string>>
-            {       
+            {
                 {"versioncontrol", new Dictionary<string, string>()
                     {
                         {"sourceControlType", "Git"}
@@ -674,8 +809,8 @@ namespace XekinaEngine
                 {"processTemplate", new Dictionary<string, string>()
                     {
                         // This is the Id for the GDS template, on my TFS server at least.
-                        {"templateTypeId", Global.VstsProjectProcessTemplateId} 
-                    }
+                        {"templateTypeId", Global.VstsProjectProcessTemplateId}
+            }
                 }
             };
 
@@ -685,14 +820,14 @@ namespace XekinaEngine
             OperationReference operationReference;
             try
             {
-               operationReference = projectHttpClient.QueueCreateProject(newProject).Result;
+                operationReference = projectHttpClient.QueueCreateProject(newProject).Result;
             }
             catch (Exception e)
             {
-               WriteLog(String.Format("Unable to create project {0}. {1}", projectName, e.InnerException.Message));
-               return false;
+                WriteLog(String.Format("Unable to create project {0}. {1}", projectName, e.InnerException.Message));
+                return false;
             }
-            
+
 
             // tracking the status via a OperationsHttpClient (for the Project collection
             var operationsHttpClientForKnownProjectCollection = GetVssConnection().GetClient<OperationsHttpClient>();
@@ -702,7 +837,7 @@ namespace XekinaEngine
                 && projectCreationOperation.Status != OperationStatus.Cancelled)
             {
                 WriteLog("operation has not finished... waiting for 1 second");
-                Thread.Sleep(1000); 
+                Thread.Sleep(1000);
 
                 projectCreationOperation = operationsHttpClientForKnownProjectCollection.GetOperation(operationReference.Id).Result;
             }
@@ -712,7 +847,7 @@ namespace XekinaEngine
             projectCreationOperation.Status,
             projectCreationOperation.ResultMessage ?? "none"));
 
-            
+
 
             return true;
         }
@@ -758,7 +893,7 @@ namespace XekinaEngine
             workItemTrackingClient.DeleteClassificationNodeAsync(createdProject.Id, TreeStructureGroup.Iterations, "Iteration 2", discoveryNodeId).SyncResult();
             workItemTrackingClient.DeleteClassificationNodeAsync(createdProject.Id, TreeStructureGroup.Iterations, "Iteration 3", discoveryNodeId).SyncResult();
 
-            
+
             // Add Alpha Phase
             startDate = endDate.AddDays(breathingSpaceDays);
             endDate = startDate.AddDays((alphaStandardIterations + 2 * standardIterationDays));
@@ -829,9 +964,9 @@ namespace XekinaEngine
         void WriteAuditRecord(int requestId, RequestStatus status, RequestPhase phase, string headlineActivity, string data)
         {
             WriteLog("write audit record");
-            
+
             RequestLog requestLog = new RequestLog();
-            
+
             requestLog.Status = status;
             requestLog.HeadlineActivity = headlineActivity;
             requestLog.Phase = phase;
@@ -860,7 +995,7 @@ namespace XekinaEngine
         }
         private static string GetOutputPath(string fullName)
         {
-            
+
             // TODO: parameterise the name and location (possibly branch?) of the sample project and 
             // then read the contents from the .csproj file?
             string outputPath = null;
@@ -895,7 +1030,7 @@ namespace XekinaEngine
             log.WriteLine(logEntry);
             if (local) Console.WriteLine(logEntry);
         }
-        private JObject CallRestApi(HttpMethod method, string projectName, string RestofUrl, bool release = false, string body = null)
+        private JObject CallVstsRestApi(HttpMethod method, string projectName, string RestofUrl, bool release = false, string body = null)
         {
             string responseBody = "";
             string urlBase = Global.VstsCollectionUri;
@@ -938,7 +1073,9 @@ namespace XekinaEngine
                 return JObject.Parse(responseBody);
             }
         }
-        #endregion
+      
+
+
 
         private static JToken GetReleaseEnvironmentsJson(string snippetPath)
         {
@@ -1045,5 +1182,6 @@ namespace XekinaEngine
                 }
             }
         }
+#endregion
     }
 }

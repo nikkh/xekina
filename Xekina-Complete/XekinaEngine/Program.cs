@@ -59,23 +59,16 @@ namespace XekinaEngine
             Global.ArtifactRepoSecurityToken = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("ArtifactRepoSecurityTokenKvUri")).Result.Value;
             Global.DefaultLabAdminPassword = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("DefaultLabAdminPasswordKvUri")).Result.Value;
             Global.DefaultSQLAdminPassword = kv.GetSecretAsync(CloudConfigurationManager.GetSetting("DefaultSQLAdminPasswordKvUri")).Result.Value;
+            Global.TenantId = GetGlobalFromAppSettings("ida:TenantID");
+            Global.ClientId = GetGlobalFromAppSettings("ida:ClientId");
+            Global.ClientSecret = GetGlobalFromAppSettings("ida:ClientSecret");
+           
 
-            
 
-
-
-            Global.VstsProjectProcessTemplateId = CloudConfigurationManager.GetSetting("VstsProjectProcessTemplateId");
-            if (Global.VstsProjectProcessTemplateId == null)
-            {
-                throw new XekinaEngineConfigurationException("VstsProjectProcessTemplateId is not set in configuration");
-            }
-
-            Global.VstsCollectionUriRelease = CloudConfigurationManager.GetSetting("VstsCollectionUriRelease");
-            if (Global.VstsCollectionUriRelease == null)
-            {
-                TraceHelper.TraceError("VstsCollectionUriRelease is not set in configuration");
-                throw new XekinaEngineConfigurationException("VstsCollectionUriRelease is not set in configuration");
-            }
+            Global.VstsProjectProcessTemplateId = GetGlobalFromAppSettings("VstsProjectProcessTemplateId");
+           
+            Global.VstsCollectionUriRelease = GetGlobalFromAppSettings("VstsCollectionUriRelease");
+           
 
             TraceHelper.TraceInformation("Secrets retrieved from KeyVault");
 
@@ -91,6 +84,17 @@ namespace XekinaEngine
 
             
 
+        }
+
+        private static string GetGlobalFromAppSettings(string settingKey)
+        {
+            string setting = CloudConfigurationManager.GetSetting(settingKey);
+            if (setting == null)
+            {
+                TraceHelper.TraceError(String.Format("{0} is not set in configuration", settingKey));
+                throw new XekinaEngineConfigurationException(String.Format("{0} is not set in configuration", settingKey));
+            }
+            return setting;
         }
     }
 }

@@ -25,5 +25,5 @@ namespace Xekina.Data.Models
        
     }
 
-    public enum RequestPhase { Initialize, VSTS, DTLab, BuildAndRelease, Environments, SampleProject, Complete }
+    public enum RequestPhase { Initialize, VSTS, DTLab, BuildAndRelease, Environments, SampleProject, Complete, Maintenance }
 }

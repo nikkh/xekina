@@ -53,17 +53,15 @@ namespace DeploymentHelper
         {
             // Create the resource manager client
             var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(Parameters.TenantId, Parameters.ClientId, Parameters.ClientSecret);
-            
-            // Doesnt work - 403 Forbidden.  I dont think you can delete the Dev/Tst Lab locks independently.  Looks
-            // licke we may need to call the REST API to delete the LAB...
-            
-            //ManagementLockClient lockClient = new ManagementLockClient(serviceCreds);
-            //lockClient.SubscriptionId = Parameters.SubscriptionId;
-            //var locks = await lockClient.ManagementLocks.ListAtResourceGroupLevelAsync(resourceGroupName);
-            //foreach (var l in locks)
-            //{
-            //    await lockClient.ManagementLocks.DeleteAtResourceGroupLevelAsync(resourceGroupName, l.Name);
-            //}
+            // TODO - remove this - now delete DTL in advance
+            ManagementLockClient lockClient = new ManagementLockClient(serviceCreds);
+            lockClient.SubscriptionId = Parameters.SubscriptionId;
+            var locks = await lockClient.ManagementLocks.ListAtResourceGroupLevelAsync(resourceGroupName);
+            foreach (var l in locks)
+            {
+                var resp = await lockClient.ManagementLocks.DeleteAtResourceGroupLevelWithHttpMessagesAsync(resourceGroupName, l.Name);
+                Console.WriteLine(resp.Response.StatusCode);
+            }
 
             var resourceManagementClient = new ResourceManagementClient(serviceCreds);
             resourceManagementClient.SubscriptionId = Parameters.SubscriptionId;
@@ -148,8 +146,8 @@ namespace DeploymentHelper
                 Parameters = parameterFileContents["parameters"].ToObject<JObject>()
             };
 
-            var deploymentResult = resourceManagementClient.Deployments.CreateOrUpdate(resourceGroupName, deploymentName, deployment);
-            Console.WriteLine(string.Format("Deployment status: {0}", deploymentResult.Properties.ProvisioningState));
+            var deploymentResult = resourceManagementClient.Deployments.CreateOrUpdateAsync(resourceGroupName, deploymentName, deployment);
+            Console.WriteLine(string.Format("Deployment status: {0}", deploymentResult.Status));
         }
     }
 }

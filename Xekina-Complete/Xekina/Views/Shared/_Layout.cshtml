@@ -39,16 +39,19 @@
                         <text>
                             
                                 <li>@Html.ActionLink("Requests", "Index", "Requests")</li>
+                               
                              
                          
                         </text>
                     }
+                    @Html.Partial("_AdminPartial")
+                    @Html.Partial("_SettingsPartial")
                     <li>@Html.ActionLink("About", "About", "Home")</li>
                     
                    
 
                 </ul>
-                @Html.Partial("_SettingsPartial")
+              
                 @Html.Partial("_LoginPartial")
             </div>
         </div>

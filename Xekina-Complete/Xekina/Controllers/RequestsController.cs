@@ -107,26 +107,53 @@ namespace Xekina.Controllers
             if (ModelState.IsValid)
             {
                 db.Requests.Add(request);
+                RequestLog requestLog = new RequestLog
+                {
+                    EventTime = request.DateRequested,
+                    Request = request,
+                    Status = RequestStatus.Created,
+                    HeadlineActivity = "Request Created",
+                     Phase = RequestPhase.Initialize, Data = request.ProjectName
+                };
+                db.RequestLogs.Add(requestLog);
                 await db.SaveChangesAsync();
                 RequestMessage rm = (RequestMessage) request;
-                AddRequestMessageToEngineQueue(rm);
+                AddCreateRequestMessageToEngineQueue(rm);
                 return RedirectToAction("Index");
             }
 
             return View(request);
         }
 
-        private void AddRequestMessageToEngineQueue(RequestMessage rm)
+        private void AddCreateRequestMessageToEngineQueue(RequestMessage rm)
         {
             
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(queueConnectionString);
             CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
             // Retrieve a reference to a queue.
-            CloudQueue queue = queueClient.GetQueueReference(CloudConfigurationManager.GetSetting("RequestQueueName"));
+            CloudQueue queue = queueClient.GetQueueReference(CloudConfigurationManager.GetSetting("CreateRequestQueueName"));
 
             // Create the queue if it doesn't already exist.
             queue.CreateIfNotExists();
                         
+            string requestMessageString = JsonConvert.SerializeObject(rm);
+
+            // Create a message and add it to the queue.
+            CloudQueueMessage message = new CloudQueueMessage(requestMessageString);
+            queue.AddMessage(message);
+        }
+
+        private void AddDeleteRequestMessageToEngineQueue(RequestMessage rm)
+        {
+
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(queueConnectionString);
+            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
+            // Retrieve a reference to a queue.
+            CloudQueue queue = queueClient.GetQueueReference(CloudConfigurationManager.GetSetting("DeleteRequestQueueName"));
+
+            // Create the queue if it doesn't already exist.
+            queue.CreateIfNotExists();
+
             string requestMessageString = JsonConvert.SerializeObject(rm);
 
             // Create a message and add it to the queue.
@@ -186,8 +213,10 @@ namespace Xekina.Controllers
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
             Request request = await db.Requests.FindAsync(id);
-            db.Requests.Remove(request);
+            request.Status=RequestStatus.AwaitingDeletion;
             await db.SaveChangesAsync();
+            RequestMessage rm = (RequestMessage)request;
+            AddDeleteRequestMessageToEngineQueue(rm);
             return RedirectToAction("Index");
         }
 

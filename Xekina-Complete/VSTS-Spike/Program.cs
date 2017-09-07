@@ -1137,7 +1137,8 @@ namespace VSTS_Spike
                 foreach (var projectReference in projectHttpClient.GetProjects(top: 20, skip: 0).Result)
                 {
                     var teamProject = projectHttpClient.GetProject(projectReference.Id.ToString()).Result;
-                    if (teamProject.Description == "This is a dummy project")
+                    if (teamProject.Description == null) continue;
+                    if (teamProject.Description.Contains("@xekina"))
                     {
                         none = false;
                         Log(string.Format("Delete project {0}? (Y/N) default=No", teamProject.Name), ConsoleColor.White);
