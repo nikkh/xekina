@@ -47,7 +47,7 @@ namespace XekinaEngine
                 using (HttpResponseMessage response = client.SendAsync(request).Result)
                 {
                     responseBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
+                   // WriteLog(String.Format("Api Call {0} returned {1}", requestUri, response.StatusCode));
                     if (!response.IsSuccessStatusCode)
                     {
                         throw new Exception("Error making Api call!");
@@ -56,6 +56,8 @@ namespace XekinaEngine
 
                 return JObject.Parse(responseBody);
             }
+
+
         }
     }
 }

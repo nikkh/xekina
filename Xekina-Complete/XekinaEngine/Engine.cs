@@ -49,7 +49,7 @@ namespace XekinaEngine
         public void CreateProjectRequestOrchestrator(Request request)
         {
             bool result = true;
-            //TODO: Write a record from the Web App into audit log.
+            
             WriteLog(String.Format("CreateProjectRequestOrchestrator is processing the request for project {0}", request.ProjectName));
             WriteAuditRecord(request.RequestID, RequestStatus.InProgress, RequestPhase.Initialize, "Xekina is processing this request", request.ProjectName);
 
@@ -130,8 +130,8 @@ namespace XekinaEngine
         internal void DeleteProjectRequestOrchestrator(Request request)
         {
             bool result;
-            TraceHelper.TraceInformation("Processing deletion request for project" + request.ProjectName);
-            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteVSTSProject", request.ProjectName);
+            WriteLog(String.Format("Processing deletion request for project" + request.ProjectName));
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "Deletion of Vsts project is starting", request.ProjectName);
             result = DeleteVSTSProject(request.ProjectName);
             if (!result)
             {
@@ -139,7 +139,7 @@ namespace XekinaEngine
                 WriteLog(String.Format("Unable to create project structure for project {0}", request.ProjectName));
                 return;
             }
-            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "DeleteVSTSProject", "Vsts project" + request.ProjectName + "was deleted");
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, "Deletion of Vsts project has finished", "Vsts project" + request.ProjectName + "was deleted");
 
             /// Experimental delete DTL async and queue resource group
             /// 
@@ -147,12 +147,14 @@ namespace XekinaEngine
             // TODO:  This is a long running operation.  Could we queue a message to delete rosource groups once the operation has finished?  This would require looking at a 
             string labName = String.Format("{0}-{1}", request.ProjectName, "lab");
             string resourceGroupName = String.Format("{0}-{1}", request.ProjectName, "lab");
-            result = DeleteDTL(request.SubscriptionId, resourceGroupName, labName);
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, String.Format("Deletion of Dev/Test Lab {0} has started", labName), request.ProjectName);
+            result = DeleteDevTestLab(request.SubscriptionId, resourceGroupName, labName);
             if (!result)
             {
-                // TODO Logging
-                return;
+                WriteAuditRecord(request.RequestID, RequestStatus.Error, RequestPhase.Complete, "DeleteDevTestLab", request.ProjectName);
+                WriteLog(String.Format("Unable to dev test lab {0} for project {1}", labName, request.ProjectName));
             }
+            WriteAuditRecord(request.RequestID, RequestStatus.DeleteInProgress, RequestPhase.Maintenance, String.Format("Deletion of Dev/Test Lab {0} has finished", labName), request.ProjectName);
             // HACK: dont let this go on infinitely...
             int count = 0;
             bool labDeleting = true;
@@ -184,14 +186,9 @@ namespace XekinaEngine
             string restfulUrl =
                String.Format("https://management.azure.com/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.DevTestLab/labs/{2}?api-version=2016-05-15", subscriptionId, resourceGroupName, labName);
             string token = "";
-            try
-            {
+            
                 token = AuthenticationHelpers.AcquireTokenBySPN(Global.TenantId, Global.ClientId, Global.ClientSecret).Result;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+           
             HttpStatusCode result;
             using (HttpClient client = new HttpClient())
             {
@@ -224,7 +221,7 @@ namespace XekinaEngine
             }
             return true;
         }
-        private bool DeleteDTL(string subscriptionId, string resourceGroupName, string labName)
+        private bool DeleteDevTestLab(string subscriptionId, string resourceGroupName, string labName)
         {
             string restfulUrl = 
                 String.Format("https://management.azure.com/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.DevTestLab/labs/{2}?api-version=2016-05-15", subscriptionId, resourceGroupName, labName);
@@ -294,7 +291,7 @@ namespace XekinaEngine
             labParameters.parameters.username.value = CloudConfigurationManager.GetSetting("LabVMUserId");
             labParameters.parameters.password.value = Global.DefaultLabAdminPassword;
             parameters.ParameterFileContent = JsonConvert.SerializeObject(labParameters);
-            Deployer deployer = new Deployer(parameters);
+            Deployer deployer = new Deployer(parameters, local, log);
             deployer.Deploy().SyncResult();
             WriteLog("End of Dev Test Lab Creation Phase.");
             return true;
@@ -360,22 +357,22 @@ namespace XekinaEngine
                         {
                             if (archive.Entries.Count == 0)
                             {
-                                Console.WriteLine("There were no entries in archive!");
+                               WriteLog("There were no entries in archive!");
                             }
                             // TODO parameterise
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample/XekinaWebApp") && (!String.IsNullOrEmpty(e.Name))))
                             {
-                                Console.WriteLine("{0} was discovered in the archive", entry.FullName);
+                                WriteLog(String.Format("{0} was discovered in the archive", entry.FullName));
                                 if (entry.Name.Contains(".sln"))
                                 {
-                                    WriteLog("Solution " + entry.Name + "was identified");
+                                    WriteLog("Solution " + entry.Name + " was identified");
                                 }
                                 string outputPath = GetOutputPath(entry.FullName);
                                 string content = null;
                                 using (StreamReader reader = new StreamReader(entry.Open()))
                                 {
                                     content = reader.ReadToEnd();
-                                    Console.WriteLine();
+                                    
                                 }
                                 if (entry.FullName.Contains("Views/Home/Index.cshtml"))
                                 {
@@ -400,13 +397,13 @@ namespace XekinaEngine
 
                             foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.Contains("XekinaSample.sln")))
                             {
-                                Console.WriteLine("{0} was discovered in the archive", entry.FullName);
+                                WriteLog(String.Format("{0} was discovered in the archive", entry.FullName));
                                 string outputPath = GetOutputPath(entry.FullName);
                                 string content = null;
                                 using (StreamReader reader = new StreamReader(entry.Open()))
                                 {
                                     content = reader.ReadToEnd();
-                                    Console.WriteLine();
+                                    
                                 }
 
                                 GitChange change = new GitChange()
@@ -479,7 +476,7 @@ namespace XekinaEngine
             };
 
             gChanges.Add(readme);
-
+            WriteLog("Readme.md file was generated");
 
 
             GitCommitRef newCommit = new GitCommitRef()
@@ -494,6 +491,7 @@ namespace XekinaEngine
                 RefUpdates = new GitRefUpdate[] { newBranch },
                 Commits = new GitCommitRef[] { newCommit },
             }, repo.Id).Result;
+            WriteLog("Git commit was pushed to repository. Id = " + newCommit.CommitId);
             return true;
         }
         private bool CreateEnvironment(string projectName, string environment, string resourceGroupLocation, string subscriptionId)
@@ -521,10 +519,9 @@ namespace XekinaEngine
             envParameters.parameters.environmentName.value = environment;
             envParameters.parameters.skuName.value = environmentHostingPlanSku;
             envParameters.parameters.administratorLogin.value = CloudConfigurationManager.GetSetting("EnvSQLAdmin");
-            // TODO:Move this to Key Vault
             envParameters.parameters.administratorLoginPassword.value = Global.DefaultSQLAdminPassword;
             parameters.ParameterFileContent = JsonConvert.SerializeObject(envParameters);
-            Deployer deployer = new Deployer(parameters);
+            Deployer deployer = new Deployer(parameters, local, log);
             deployer.Deploy().SyncResult();
             // TODO This failed with an error - maximum number of free server farms...  need to catch these.
             /* 
@@ -600,13 +597,14 @@ namespace XekinaEngine
             int interval = 1;
             while (!IsServiceEndpointReady(projectName, endpoint["id"].ToString()))
             {
-                Console.Write(".");
+                if (local) Console.Write(".", ConsoleColor.Yellow);
                 Thread.Sleep(1000 * interval);
                 interval = interval * 2;
             }
-
+            WriteLog("Service Endpoint is ready now");
 
             // This is a constant within the VSTS Account
+            // TOD parameterize it.
             string releaseTemplateId = "f6a07a4f-1e1f-41c0-abab-eee4b3c9117f";
             JObject releaseDefinition = GetReleaseDefinitionTemplate(Global.VstsCollectionUri, projectName, releaseTemplateId);
             releaseDefinition["name"] = GetReleaseNameJson(projectName);
@@ -1027,8 +1025,20 @@ namespace XekinaEngine
 
         private void WriteLog(string logEntry)
         {
+            // TODO catch Exception from Console.Writeline()
             log.WriteLine(logEntry);
-            if (local) Console.WriteLine(logEntry);
+            if (local)
+            {
+                try
+                {
+                    Console.WriteLine(logEntry, ConsoleColor.Yellow);
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Error writing to console "+ e.Message);
+                }
+            }
+            Trace.TraceInformation(logEntry);
         }
         private JObject CallVstsRestApi(HttpMethod method, string projectName, string RestofUrl, bool release = false, string body = null)
         {

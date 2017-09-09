@@ -9,6 +9,7 @@ using Microsoft.Rest.Azure.Authentication;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,12 +22,24 @@ namespace DeploymentHelper
     /// </summary>
     public class Deployer
     {
-        //TODO: Ensure logging is compatible/consistent with Engine
+        private TextWriter _log = null;
+        private bool _local = false;
+       
+        
         public DeployerParameters Parameters {get; set;}
 
-        public Deployer(DeployerParameters parameters)
+        public Deployer(DeployerParameters parameters, bool local = false, TextWriter log = null)
         {
+            if (log != null) _log = log;
+            if (local) _local = true;
             Parameters = parameters;
+        }
+
+        private void WriteLog(string logEntry)
+        {
+            _log.WriteLine(logEntry);
+            if (_local) Console.WriteLine(logEntry);
+            Trace.TraceInformation(logEntry);
         }
         public async Task Deploy()
         {
@@ -53,20 +66,11 @@ namespace DeploymentHelper
         {
             // Create the resource manager client
             var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(Parameters.TenantId, Parameters.ClientId, Parameters.ClientSecret);
-            // TODO - remove this - now delete DTL in advance
-            ManagementLockClient lockClient = new ManagementLockClient(serviceCreds);
-            lockClient.SubscriptionId = Parameters.SubscriptionId;
-            var locks = await lockClient.ManagementLocks.ListAtResourceGroupLevelAsync(resourceGroupName);
-            foreach (var l in locks)
-            {
-                var resp = await lockClient.ManagementLocks.DeleteAtResourceGroupLevelWithHttpMessagesAsync(resourceGroupName, l.Name);
-                Console.WriteLine(resp.Response.StatusCode);
-            }
-
+           
             var resourceManagementClient = new ResourceManagementClient(serviceCreds);
             resourceManagementClient.SubscriptionId = Parameters.SubscriptionId;
             
-            var ResourceGroup = resourceManagementClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
+           await resourceManagementClient.ResourceGroups.BeginDeleteAsync(resourceGroupName);
         }
         // TODO: Refactor to use Joject.Parse()
         private JObject GetJsonStringContents(string jsonString)
@@ -111,22 +115,22 @@ namespace DeploymentHelper
         /// <param name="resourceManagementClient">The resource manager client.</param>
         /// <param name="resourceGroupName">The name of the resource group.</param>
         /// <param name="resourceGroupLocation">The resource group location. Required when creating a new resource group.</param>
-        private static void EnsureResourceGroupExists(ResourceManagementClient resourceManagementClient, string resourceGroupName, string resourceGroupLocation)
+        private void EnsureResourceGroupExists(ResourceManagementClient resourceManagementClient, string resourceGroupName, string resourceGroupLocation)
         {
             if (resourceManagementClient.ResourceGroups.CheckExistence(resourceGroupName) != true)
             {
-                Console.WriteLine(string.Format("Creating resource group '{0}' in location '{1}'", resourceGroupName, resourceGroupLocation));
+                WriteLog(string.Format("Creating resource group '{0}' in location '{1}'", resourceGroupName, resourceGroupLocation));
                 var resourceGroup = new ResourceGroup();
                 resourceGroup.Location = resourceGroupLocation;
                 resourceManagementClient.ResourceGroups.CreateOrUpdate(resourceGroupName, resourceGroup);
             }
             else
             {
-                Console.WriteLine(string.Format("Using existing resource group '{0}'", resourceGroupName));
+                WriteLog(string.Format("Using existing resource group '{0}'", resourceGroupName));
             }
         }
 
-        /// <summary>
+        /// <summary>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
         /// Starts a template deployment.
         /// </summary>
         /// <param name="resourceManagementClient">The resource manager client.</param>
@@ -134,9 +138,9 @@ namespace DeploymentHelper
         /// <param name="deploymentName">The name of the deployment.</param>
         /// <param name="templateFileContents">The template file contents.</param>
         /// <param name="parameterFileContents">The parameter file contents.</param>
-        private static void DeployTemplate(ResourceManagementClient resourceManagementClient, string resourceGroupName, string deploymentName, JObject templateFileContents, JObject parameterFileContents)
+        private void DeployTemplate(ResourceManagementClient resourceManagementClient, string resourceGroupName, string deploymentName, JObject templateFileContents, JObject parameterFileContents)
         {
-            Console.WriteLine(string.Format("Starting template deployment '{0}' in resource group '{1}'", deploymentName, resourceGroupName));
+            WriteLog(string.Format("Starting template deployment '{0}' in resource group '{1}'", deploymentName, resourceGroupName));
             var deployment = new Deployment();
 
             deployment.Properties = new DeploymentProperties
@@ -147,7 +151,7 @@ namespace DeploymentHelper
             };
 
             var deploymentResult = resourceManagementClient.Deployments.CreateOrUpdateAsync(resourceGroupName, deploymentName, deployment);
-            Console.WriteLine(string.Format("Deployment status: {0}", deploymentResult.Status));
+            WriteLog(string.Format("Deployment status: {0}", deploymentResult.Status));
         }
     }
 }
