@@ -1,10 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
 using Xekina.Data.Models;
 using Xekina.ViewModels;
 
@@ -22,7 +26,27 @@ namespace Xekina
             Trace.TraceInformation(logEntry);
         }
 
+        public static void SaveFileToBlobStorage(string storageConnectionString, HttpPostedFileBase file)
+        {
 
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+
+           
+            var container = blobClient.GetContainerReference("xekina-templates");
+            container.CreateIfNotExists();
+           
+            CloudBlockBlob blob = container.GetBlockBlobReference(Path.GetFileName(file.FileName));
+            blob.DeleteIfExists();
+
+            // upload modified file
+            using (var fileStream = file.InputStream)
+            {
+                blob.UploadFromStream(fileStream);
+            }
+
+        }
 
         public async Task<Dictionary<string, string>> GetResourceLocationsForUserSubscriptions()
         {
